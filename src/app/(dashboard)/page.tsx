@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { FunnelChart } from "@/components/dashboard/FunnelChart";
 import { fetchDashboardData, getAvailableScripts, TimeRange, DashboardStats } from "@/lib/api";
+import { startOfDay, endOfDay, subDays } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -38,7 +39,27 @@ export default function DashboardPage() {
     async function loadData() {
       setLoading(true);
       try {
-        const stats = await fetchDashboardData(range, selectedArea);
+        let start: string | undefined;
+        let end: string | undefined;
+        const now = new Date();
+
+        switch (range) {
+          case 'today':
+            start = startOfDay(now).toISOString();
+            break;
+          case 'yesterday':
+            start = startOfDay(subDays(now, 1)).toISOString();
+            end = endOfDay(subDays(now, 1)).toISOString();
+            break;
+          case '7days':
+            start = startOfDay(subDays(now, 7)).toISOString();
+            break;
+          case '30days':
+            start = startOfDay(subDays(now, 30)).toISOString();
+            break;
+        }
+
+        const stats = await fetchDashboardData(start, end, selectedArea);
         setData(stats);
       } catch (error) {
         console.error("Failed to load dashboard data", error);

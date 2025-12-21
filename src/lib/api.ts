@@ -18,7 +18,7 @@ export interface DashboardStats {
     }[];
 }
 
-export async function fetchDashboardData(range: TimeRange, area?: string): Promise<DashboardStats> {
+export async function fetchDashboardData(startDate?: string, endDate?: string, area?: string): Promise<DashboardStats> {
     const cookieStore = await cookies();
     const userId = cookieStore.get('session')?.value;
 
@@ -27,36 +27,16 @@ export async function fetchDashboardData(range: TimeRange, area?: string): Promi
         return { qualified: 0, total: 0, disqualified: 0, funnel: [] };
     }
 
-    let startDate: Date;
-    const now = new Date();
-
-    switch (range) {
-        case 'today':
-            startDate = startOfDay(now);
-            break;
-        case 'yesterday':
-            startDate = startOfDay(subDays(now, 1));
-            break;
-        case '7days':
-            startDate = subDays(now, 7);
-            break;
-        case '30days':
-            startDate = subDays(now, 30);
-            break;
-    }
-
     // Fetch 'Todos os clientes' based on created_at AND ID_empresa
     let query = supabase
         .from('Todos os clientes')
         .select('*')
         .eq('ID_empresa', userId);
 
-    if (range === 'yesterday') {
-        const yesterdayStart = startOfDay(subDays(now, 1));
-        const todayStart = startOfDay(now);
-        query = query.gte('created_at', yesterdayStart.toISOString()).lt('created_at', todayStart.toISOString());
-    } else {
-        query = query.gte('created_at', startDate.toISOString());
+    if (startDate && endDate) {
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
+    } else if (startDate) {
+        query = query.gte('created_at', startDate);
     }
 
     if (area && area !== 'all') {

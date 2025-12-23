@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { FunnelChart } from "@/components/dashboard/FunnelChart";
+import { StepConversionChart } from "@/components/dashboard/StepConversionChart";
 import { fetchDashboardData, getAvailableScripts, TimeRange, DashboardStats } from "@/lib/api";
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 import {
@@ -112,6 +113,7 @@ export default function DashboardPage() {
           <StatsCards stats={data} />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <FunnelChart data={data.funnel} />
+            <StepConversionChart data={data.stepConversion} />
           </div>
         </div>
       ) : (

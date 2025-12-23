@@ -16,6 +16,12 @@ export interface DashboardStats {
         total: number; // relative to total leads in range
         percentage: number;
     }[];
+    stepConversion: {
+        question: string;
+        count: number;
+        previousCount: number;
+        percentage: number;
+    }[];
 }
 
 export async function fetchDashboardData(startDate?: string, endDate?: string, area?: string): Promise<DashboardStats> {
@@ -24,7 +30,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     if (!userId) {
         console.error("User ID not found in session");
-        return { qualified: 0, total: 0, disqualified: 0, funnel: [] };
+        return { qualified: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
     }
 
     // Fetch 'Todos os clientes' based on created_at AND ID_empresa
@@ -47,7 +53,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     if (error) {
         console.error('Error fetching data:', error);
-        return { qualified: 0, total: 0, disqualified: 0, funnel: [] };
+        return { qualified: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
     }
 
     const leads = data || [];
@@ -79,11 +85,24 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         };
     });
 
+    const stepConversion = questions.map((q, index) => {
+        const count = leads.filter((l: any) => l[q] === true).length;
+        const previousCount = index === 0 ? total : leads.filter((l: any) => l[questions[index - 1]] === true).length;
+
+        return {
+            question: q.toUpperCase(),
+            count,
+            previousCount,
+            percentage: previousCount > 0 ? Math.round((count / previousCount) * 100) : 0
+        };
+    });
+
     return {
         qualified,
         total,
         disqualified,
-        funnel
+        funnel,
+        stepConversion
     };
 }
 

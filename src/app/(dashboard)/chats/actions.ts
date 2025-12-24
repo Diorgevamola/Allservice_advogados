@@ -165,4 +165,110 @@ export async function getLeadDetails(phone: string) {
         console.error("getLeadDetails exception:", error);
         return null;
     }
+
+
+}
+
+export async function sendMessage(chatId: string, text: string) {
+    try {
+        const { token, url } = await getCredentials();
+        // Endpoint for sending text messages
+        // Common Uazapi/Evolution pattern: /message/sendText
+        const endpoint = `${url}/message/sendText`;
+
+        // Extract number from chatId (remove @s.whatsapp.net if present)
+        const number = chatId.includes('@') ? chatId.split('@')[0] : chatId;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                number: number,
+                text: text,
+                delay: 1200,
+                linkPreview: true
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`sendMessage API Error: ${response.status} - ${errorBody}`);
+            throw new Error(`Falha ao enviar mensagem: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("sendMessage error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteMessage(chatId: string, messageId: string) {
+    try {
+        const { token, url } = await getCredentials();
+        const endpoint = `${url}/message/delete`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: messageId
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`deleteMessage API Error: ${response.status} - ${errorBody}`);
+            throw new Error(`Falha ao deletar mensagem: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("deleteMessage error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function toggleLeadAI(phone: string, isEnabled: boolean) {
+    try {
+        const cookieStore = await cookies();
+        const session = cookieStore.get('session');
+
+        if (!session?.value) {
+            throw new Error("Usuário não autenticado");
+        }
+
+        const userId = parseInt(session.value);
+        const sanitizedPhone = phone.replace(/\D/g, '');
+
+        const supabase = createClient();
+
+        // Check if lead exists first or update directly
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .update({ 'IA_responde': isEnabled })
+            .eq('ID_empresa', userId)
+            .eq('telefone', sanitizedPhone)
+            .select();
+
+        if (error) {
+            console.error("toggleLeadAI error:", error);
+            throw new Error(`Falha ao atualizar IA: ${error.message}`);
+        }
+
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("toggleLeadAI exception:", error);
+        return { success: false, error: error.message };
+    }
 }

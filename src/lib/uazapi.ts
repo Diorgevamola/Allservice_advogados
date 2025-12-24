@@ -33,6 +33,7 @@ export interface UazapiMessage {
     fromMe: boolean;
     senderName?: string;
     fileURL?: string;
+    status?: string;
 }
 
 export interface UazapiResponse<T> {

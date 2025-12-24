@@ -1,23 +1,38 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { fetchChats, fetchMessages, getLeadDetails } from './actions';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchChats, fetchMessages, getLeadDetails, sendMessage, deleteMessage, toggleLeadAI } from './actions';
 import { UazapiChat, UazapiMessage } from '@/lib/uazapi';
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { MessageSquare, Phone, MoreVertical, Search } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import { format } from 'date-fns';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+    Search,
+    MessageSquare,
+    MoreVertical,
+    Phone,
+    Trash2,
+    Plus,
+    Bot,
+    Loader2
+} from 'lucide-react';
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ChatsPage() {
     const [chats, setChats] = useState<UazapiChat[]>([]);
@@ -26,109 +41,227 @@ export default function ChatsPage() {
     const [loadingChats, setLoadingChats] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [inputText, setInputText] = useState('');
 
-    // Profile state
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const observer = useRef<IntersectionObserver | null>(null);
+
+    // Lead Profile State
     const [leadDetails, setLeadDetails] = useState<any>(null);
     const [showProfile, setShowProfile] = useState(false);
 
-    const [error, setError] = useState<string | null>(null);
-    const [limit, setLimit] = useState<number>(100);
+    // AI FAB State
+    const [isFabOpen, setIsFabOpen] = useState(false);
+    const [isAIEnabled, setIsAIEnabled] = useState(false);
 
-    // Initial load + polling for chats list (every 10 seconds)
+    // Initial load
     useEffect(() => {
-        loadChats(); // Initial load
+        loadChats(1, true);
+
+        // Polling for NEW chats (only first page)
         const interval = setInterval(() => {
-            loadChats(true); // silent update
+            refreshFirstPage();
         }, 10000);
-        return () => clearInterval(interval);
-    }, [limit]);
-
-    // Polling for messages (every 3 seconds) if chat is selected
-    useEffect(() => {
-        if (!selectedChat) return;
-
-        const interval = setInterval(() => {
-            loadMessages(selectedChat.wa_chatid, true); // silent update
-        }, 3000);
 
         return () => clearInterval(interval);
-    }, [selectedChat]);
+    }, []);
 
+    // Polling for messages when chat selected
     useEffect(() => {
+        let interval: NodeJS.Timeout;
         if (selectedChat) {
-            loadMessages(selectedChat.wa_chatid);
-            // Fetch lead details
-            const phone = selectedChat.phone || (selectedChat.wa_chatid.includes('@') ? selectedChat.wa_chatid.split('@')[0] : selectedChat.wa_chatid);
-            getLeadDetails(phone).then(data => {
-                setLeadDetails(data);
-            });
-        } else {
-            setLeadDetails(null);
-            setShowProfile(false);
+            loadMessages(selectedChat.wa_chatid); // Initial load when clicked
+            interval = setInterval(() => {
+                loadMessages(selectedChat.wa_chatid, false);
+            }, 5000); // 5s polling
         }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [selectedChat]);
 
-    // Scroll to bottom when messages update
-    // Scroll to bottom when messages update
+    // Sync AI state when details load
     useEffect(() => {
-        // Target the viewport inside the message area specifically
-        const messageArea = document.getElementById('message-area-scroll');
-        const viewport = messageArea?.querySelector('[data-radix-scroll-area-viewport]');
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
+        if (leadDetails) {
+            const aiStatus = leadDetails.IA_responde === true || leadDetails.IA_responde === 'true';
+            setIsAIEnabled(aiStatus);
+        } else {
+            setIsAIEnabled(false);
         }
-    }, [messages]);
+    }, [leadDetails]);
 
-    async function loadChats(silent = false) {
-        if (!silent) setLoadingChats(true);
-        setError(null);
+    async function loadChats(pageNum: number, isInitial = false) {
+        if (isInitial) setLoadingChats(true);
+        else setLoadingMore(true);
+
         try {
-            const res = await fetchChats(1, limit);
+            const res = await fetchChats(pageNum, 20);
+            const newChats = res.chats || res.response || [];
 
-            if (res.error) {
-                console.error("Chats error from server:", res.error);
-                if (!silent) setError(res.error);
-            } else if (res.chats || res.response) {
-                const data = res.chats || res.response || [];
-                setChats(data);
+            if (pageNum === 1) {
+                setChats(newChats);
+            } else {
+                setChats(prev => {
+                    // Avoid duplicates if polling overlapped
+                    const existingIds = new Set(prev.map(c => c.wa_chatid));
+                    const filtered = newChats.filter(c => !existingIds.has(c.wa_chatid));
+                    return [...prev, ...filtered];
+                });
             }
-        } catch (err) {
-            console.error("Unexpected error in loadChats:", err);
-            if (!silent) setError("Erro inesperado ao carregar chats.");
+
+            // If we got fewer than 20, assume no more
+            setHasMore(newChats.length === 20);
+            setPage(pageNum);
+        } catch (error) {
+            console.error("Error loading chats:", error);
+        } finally {
+            if (isInitial) setLoadingChats(false);
+            setLoadingMore(false);
         }
-        if (!silent) setLoadingChats(false);
     }
 
-    async function loadMessages(chatId: string, silent = false) {
-        if (!silent) {
-            setLoadingMessages(true);
-            setMessages([]); // Clear previous messages immediately to avoid confusion
+    // Just refresh the first page to see new messages without losing scroll or appending infinitely
+    async function refreshFirstPage() {
+        try {
+            const res = await fetchChats(1, 20);
+            const firstPageChats = res.chats || res.response || [];
+
+            setChats(prev => {
+                const combined = [...firstPageChats];
+                // Keep chats that were already loaded in subsequent pages
+                const firstPageIds = new Set(firstPageChats.map(c => c.wa_chatid));
+                const otherChats = prev.filter(c => !firstPageIds.has(c.wa_chatid));
+                return [...combined, ...otherChats].sort((a, b) => (b.wa_lastMsgTimestamp || 0) - (a.wa_lastMsgTimestamp || 0));
+            });
+        } catch (e) {
+            console.error("Refresh error:", e);
+        }
+    }
+
+    const lastChatElementRef = useCallback((node: HTMLDivElement) => {
+        if (loadingChats || loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                loadChats(page + 1);
+            }
+        });
+
+        if (node) observer.current.observe(node);
+    }, [loadingChats, loadingMore, hasMore, page]);
+
+    async function loadMessages(chatId: string, forceScroll = false) {
+        if (!chatId) return;
+        if (forceScroll) setLoadingMessages(true);
+
+        const res = await fetchMessages(chatId);
+        if (res.messages || res.response) {
+            const msgs = (res.messages || res.response || []).reverse();
+            setMessages(msgs);
+
+            if (forceScroll) {
+                setTimeout(() => {
+                    const scrollArea = document.getElementById('message-area-scroll');
+                    if (scrollArea) {
+                        const scrollContainer = scrollArea.querySelector('[data-radix-scroll-area-viewport]');
+                        if (scrollContainer) {
+                            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                        }
+                    }
+                }, 100);
+            }
+        }
+        if (forceScroll) setLoadingMessages(false);
+    }
+
+    async function handleChatSelect(chat: UazapiChat) {
+        setSelectedChat(chat);
+        setLoadingMessages(true);
+        setMessages([]);
+        setShowProfile(false);
+        setLeadDetails(null);
+        setIsFabOpen(false);
+        setIsAIEnabled(false);
+
+        if (chat.phone || chat.wa_chatid) {
+            const phone = chat.phone || chat.wa_chatid.split('@')[0];
+            const details = await getLeadDetails(phone);
+            setLeadDetails(details);
         }
 
+        await loadMessages(chat.wa_chatid, true);
+    }
+
+    async function handleSendMessage() {
+        if (!selectedChat || !inputText.trim()) return;
+        const text = inputText;
+        setInputText('');
+
         try {
-            const res = await fetchMessages(chatId);
+            const tempId = Date.now().toString();
+            const tempMsg: UazapiMessage = {
+                id: tempId,
+                messageid: tempId,
+                chatid: selectedChat.wa_chatid,
+                text: text,
+                messageType: 'text',
+                messageTimestamp: Date.now(),
+                fromMe: true
+            };
+            setMessages(prev => [...prev, tempMsg]);
 
-            // Race condition check: ensure we are still looking at the same chat
-            if (chatId !== selectedChat?.wa_chatid && !silent) return;
-            // For silent updates, we also check, but we rely on the effect cleanup mostly. 
-            // However, inside the async function, selectedChat might have changed.
-            // Since we can't easily access the *current* selectedChat ref here without a ref, 
-            // we rely on the fact that if the user switched, the component re-rendered and this 
-            // closure is stale or the effect was cleaned up. 
-            // BUT, strictly speaking, async continuations can run. 
-            // A simple check against the state available in closure is tricky if it's stale. 
-            // For now, clearing messages on start of non-silent load helps UI responsiveness.
-
-            const data = res.messages || res.response;
-            if (data) {
-                // Reverse so oldest is at top for standard chat view
-                // If silent, we might want to check if data changed, but replacing is strictly easier for now.
-                setMessages(data.reverse());
+            const res = await sendMessage(selectedChat.wa_chatid, text);
+            if (res.success) {
+                loadMessages(selectedChat.wa_chatid, true);
+            } else {
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+                toast.error("Erro ao enviar mensagem");
             }
-        } catch (error) {
-            console.error("Error loading messages:", error);
-        } finally {
-            if (!silent) setLoadingMessages(false);
+        } catch (e) {
+            console.error("Handler error:", e);
+        }
+    }
+
+    async function handleDeleteMessage(messageId: string) {
+        if (!selectedChat) return;
+        const originalMessages = [...messages];
+
+        // Optimistic update: mark as deleted instead of removing
+        setMessages(prev => prev.map(m =>
+            (m.id === messageId || m.messageid === messageId)
+                ? { ...m, status: 'Deleted', text: 'Esta mensagem foi apagada' }
+                : m
+        ));
+
+        const res = await deleteMessage(selectedChat.wa_chatid, messageId);
+        if (!res.success) {
+            toast.error("Erro ao apagar mensagem");
+            setMessages(originalMessages);
+        } else {
+            toast.success("Mensagem apagada para todos");
+        }
+    }
+
+    async function handleToggleAI(enabled: boolean) {
+        if (!selectedChat) return;
+        const prev = isAIEnabled;
+        setIsAIEnabled(enabled);
+
+        const phone = selectedChat.phone || selectedChat.wa_chatid.split('@')[0];
+        const res = await toggleLeadAI(phone, enabled);
+
+        if (res.success) {
+            toast.success(enabled ? "IA Ativada" : "IA Desativada");
+            if (leadDetails) {
+                setLeadDetails({ ...leadDetails, IA_responde: enabled });
+            }
+        } else {
+            setIsAIEnabled(prev);
+            toast.error("Erro ao alterar status da IA");
         }
     }
 
@@ -138,112 +271,136 @@ export default function ChatsPage() {
     });
 
     const getLastMessageDisplay = (chat: UazapiChat) => {
-        if (chat.wa_lastMessageType === 'image') return '📷 Foto';
-        if (chat.wa_lastMessageType === 'video') return '🎥 Vídeo';
-        if (chat.wa_lastMessageType === 'audio') return '🎙️ Áudio';
-        if (chat.wa_lastMessageType === 'document') return '📄 Documento';
-        if (chat.wa_lastMessageType === 'sticker') return '✨ Figurinha';
-
-        return chat.wa_lastMessageTextVote || chat.wa_lastMessageText || chat.last_message?.message || "Sem mensagens";
+        if (chat.wa_lastMessageTextVote) return chat.wa_lastMessageTextVote;
+        if (chat.wa_lastMessageText) return chat.wa_lastMessageText;
+        if (chat.last_message?.message) return chat.last_message.message;
+        if (chat.wa_lastMessageType && chat.wa_lastMessageType !== 'text') return `[${chat.wa_lastMessageType}]`;
+        return '';
     };
 
     return (
         <div className="flex h-full overflow-hidden">
-            {/* Chat List */}
-            <Card className="w-[350px] flex flex-col bg-card/50 backdrop-blur-sm border-r border-y-0 border-l-0 rounded-none overflow-hidden">
+            {/* Chat List Sider */}
+            <div className="w-[350px] border-r border-border bg-card flex flex-col">
                 <div className="p-4 border-b border-border space-y-4">
-                    <h2 className="text-xl font-semibold text-foreground">Conversas</h2>
+                    <h1 className="text-xl font-bold">Conversas</h1>
                     <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Buscar conversas..."
-                            className="pl-8 bg-background/50 border-input"
+                            placeholder="Buscar conversa..."
+                            className="pl-8 bg-background"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
-                {error && (
-                    <div className="p-4 m-2 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
-                        {error}
-                    </div>
-                )}
+
                 <ScrollArea className="flex-1 min-h-0">
-                    {loadingChats ? (
-                        <div className="p-4 text-center text-muted-foreground">Carregando...</div>
-                    ) : (
-                        <div className="flex flex-col gap-1 p-2">
-                            {filteredChats.map(chat => (
-                                <button
-                                    key={chat.wa_chatid || chat.id}
-                                    onClick={() => setSelectedChat(chat)}
-                                    className={`flex items-start gap-3 p-3 rounded-lg transition-colors text-left ${selectedChat?.wa_chatid === chat.wa_chatid
-                                        ? 'bg-primary/20 hover:bg-primary/30'
-                                        : 'hover:bg-muted/50'
-                                        }`}
-                                >
-                                    <Avatar>
-                                        <AvatarImage src={chat.image || chat.profileParams?.imgUrl} />
-                                        <AvatarFallback>{(chat.wa_name || chat.wa_contactName || chat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="font-medium truncate text-sm text-foreground">
-                                                {chat.wa_name || chat.wa_contactName || chat.name || chat.wa_chatid.split('@')[0]}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                                                {chat.wa_lastMsgTimestamp ? format(new Date(chat.wa_lastMsgTimestamp), 'HH:mm', { locale: ptBR }) : ''}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground truncate">
-                                            {getLastMessageDisplay(chat)}
-                                        </p>
+                    <div className="flex flex-col">
+                        {loadingChats ? (
+                            <div className="p-4 text-center text-muted-foreground">Carregando...</div>
+                        ) : filteredChats.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground">Nenhuma conversa encontrada.</div>
+                        ) : (
+                            <>
+                                {filteredChats.map((chat, index) => {
+                                    if (filteredChats.length === index + 1) {
+                                        return (
+                                            <div
+                                                ref={lastChatElementRef}
+                                                key={chat.id || chat.wa_chatid}
+                                                className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors flex gap-3 ${selectedChat?.wa_chatid === chat.wa_chatid ? 'bg-muted' : ''}`}
+                                                onClick={() => handleChatSelect(chat)}
+                                            >
+                                                <Avatar>
+                                                    <AvatarImage src={chat.image || chat.profileParams?.imgUrl} />
+                                                    <AvatarFallback>{(chat.wa_name || chat.wa_contactName || chat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-baseline mb-1">
+                                                        <h3 className="font-semibold truncate text-sm">{chat.wa_name || chat.wa_contactName || chat.name || chat.wa_chatid}</h3>
+                                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                            {chat.wa_lastMsgTimestamp ? format(new Date(chat.wa_lastMsgTimestamp * 1000), 'dd/MM HH:mm') : ''}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground truncate">
+                                                        {getLastMessageDisplay(chat)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    } else {
+                                        return (
+                                            <div
+                                                key={chat.id || chat.wa_chatid}
+                                                className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors flex gap-3 ${selectedChat?.wa_chatid === chat.wa_chatid ? 'bg-muted' : ''}`}
+                                                onClick={() => handleChatSelect(chat)}
+                                            >
+                                                <Avatar>
+                                                    <AvatarImage src={chat.image || chat.profileParams?.imgUrl} />
+                                                    <AvatarFallback>{(chat.wa_name || chat.wa_contactName || chat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-baseline mb-1">
+                                                        <h3 className="font-semibold truncate text-sm">{chat.wa_name || chat.wa_contactName || chat.name || chat.wa_chatid}</h3>
+                                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                            {chat.wa_lastMsgTimestamp ? format(new Date(chat.wa_lastMsgTimestamp * 1000), 'dd/MM HH:mm') : ''}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground truncate">
+                                                        {getLastMessageDisplay(chat)}
+                                                    </p>
+                                                </div>
+                                                {chat.wa_unreadCount > 0 && (
+                                                    <div className="flex flex-col justify-center">
+                                                        <span className="h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                            {chat.wa_unreadCount}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                })}
+                                {loadingMore && (
+                                    <div className="p-4 flex justify-center items-center text-muted-foreground gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span className="text-xs">Carregando mais...</span>
                                     </div>
-                                    {chat.wa_unreadCount > 0 && (
-                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                                            {chat.wa_unreadCount}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                                )}
+                                {!hasMore && filteredChats.length > 0 && (
+                                    <div className="p-4 text-center text-[10px] text-muted-foreground opacity-50 uppercase tracking-wider">
+                                        Fim das conversas
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </ScrollArea>
-                <div className="p-2 border-t border-border flex justify-end items-center gap-2">
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">Mostrar:</span>
-                    <Select value={limit.toString()} onValueChange={(v) => setLimit(parseInt(v))}>
-                        <SelectTrigger className="w-[100px] h-7 bg-transparent border-border text-[10px]">
-                            <SelectValue placeholder="Linhas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="100">100 chats</SelectItem>
-                            <SelectItem value="500">500 chats</SelectItem>
-                            <SelectItem value="1000">1000 chats</SelectItem>
-                            <SelectItem value="0">Todos</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </Card>
+            </div>
 
             {/* Message Area */}
             <Card className="flex-1 flex flex-row bg-card/50 backdrop-blur-sm border-none rounded-none overflow-hidden relative">
-                <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${showProfile ? 'mr-[0px]' : ''}`}>
+                <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 relative ${showProfile ? 'mr-[0px]' : ''}`}>
                     {selectedChat ? (
                         <>
+                            {/* Header */}
                             <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
-                                <div
-                                    className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => setShowProfile(!showProfile)}
-                                >
-                                    <Avatar>
-                                        <AvatarImage src={selectedChat.image || selectedChat.profileParams?.imgUrl} />
-                                        <AvatarFallback>{(selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h3 className="font-semibold text-foreground">{selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name}</h3>
-                                        <p className="text-xs text-muted-foreground">
-                                            {selectedChat.phone || `+${selectedChat.wa_chatid.split('@')[0]}`}
-                                        </p>
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => setShowProfile(!showProfile)}
+                                    >
+                                        <Avatar>
+                                            <AvatarImage src={selectedChat.image || selectedChat.profileParams?.imgUrl} />
+                                            <AvatarFallback>{(selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h3 className="font-semibold text-foreground">{selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name}</h3>
+                                            <p className="text-xs text-muted-foreground">
+                                                {selectedChat.phone || `+${selectedChat.wa_chatid.split('@')[0]}`}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 text-muted-foreground">
@@ -253,20 +410,49 @@ export default function ChatsPage() {
                             </div>
 
                             <ScrollArea id="message-area-scroll" className="flex-1 min-h-0 p-4">
-                                <div className="space-y-4 flex flex-col">
+                                <div className="space-y-4 flex flex-col pb-16">
                                     {loadingMessages ? (
                                         <div className="text-center text-muted-foreground mt-10">Carregando mensagens...</div>
                                     ) : (
                                         messages.map(msg => (
                                             <div
                                                 key={msg.id}
-                                                className={`max-w-[70%] p-3 rounded-2xl text-sm ${msg.fromMe
+                                                className={`max-w-[70%] p-3 rounded-2xl text-sm relative group ${msg.fromMe
                                                     ? 'bg-primary/20 text-foreground self-end rounded-br-none'
                                                     : 'bg-muted text-foreground self-start rounded-bl-none'
-                                                    }`}
+                                                    } ${msg.status === 'Deleted' ? 'opacity-60 italic' : ''}`}
                                             >
+                                                {msg.fromMe && msg.status !== 'Deleted' && (
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <button
+                                                                className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-destructive hover:bg-destructive/10 rounded-full transition-all"
+                                                                title="Apagar para todos"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Apagar mensagem?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Esta ação apagará a mensagem para todos os participantes da conversa.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => handleDeleteMessage(msg.id || msg.messageid)}
+                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                >
+                                                                    Apagar para todos
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                )}
                                                 <div className="flex flex-col gap-1">
-                                                    {msg.messageType === 'audio' || msg.messageType === 'ptt' || msg.messageType === 'voice' ? (
+                                                    {['audio', 'ptt', 'voice'].includes(msg.messageType) ? (
                                                         msg.fileURL ? (
                                                             <audio controls src={msg.fileURL} className="max-w-[240px]" />
                                                         ) : (
@@ -292,11 +478,16 @@ export default function ChatsPage() {
                                                         ) : (
                                                             <span className="italic opacity-70">📄 Documento indisponível</span>
                                                         )
+                                                    ) : msg.status === 'Deleted' ? (
+                                                        <p className="flex items-center gap-1.5 opacity-70">
+                                                            <Trash2 className="h-3 w-3" />
+                                                            Mensagem apagada
+                                                        </p>
                                                     ) : (
                                                         <p>{msg.text}</p>
                                                     )}
 
-                                                    {/* Caption for media if text exists and is not just the type/url */}
+                                                    {/* Caption */}
                                                     {(msg.messageType === 'image' || msg.messageType === 'video') && msg.text && msg.text !== 'image' && msg.text !== 'video' && (
                                                         <p className="mt-1">{msg.text}</p>
                                                     )}
@@ -310,10 +501,44 @@ export default function ChatsPage() {
                                 </div>
                             </ScrollArea>
 
+                            {/* FAB Area - Bottom Left of the Chat Area */}
+                            <div className="absolute bottom-20 left-4 z-20 flex flex-col gap-2">
+                                <div className={`flex items-center gap-2 bg-card border border-border p-2 rounded-lg shadow-lg transition-all duration-300 origin-bottom-left ${isFabOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
+                                    <Switch
+                                        id="ai-mode"
+                                        checked={isAIEnabled}
+                                        onCheckedChange={handleToggleAI}
+                                    />
+                                    <Label htmlFor="ai-mode" className="text-sm cursor-pointer flex items-center gap-1">
+                                        <Bot className="h-4 w-4" />
+                                        IA {isAIEnabled ? 'On' : 'Off'}
+                                    </Label>
+                                </div>
+
+                                <button
+                                    className={`h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-transform duration-300 ${isFabOpen ? 'rotate-45' : 'rotate-0'}`}
+                                    onClick={() => setIsFabOpen(!isFabOpen)}
+                                >
+                                    <Plus className="h-6 w-6" />
+                                </button>
+                            </div>
+
                             <div className="p-4 border-t border-border bg-card/80">
                                 <div className="flex gap-2">
-                                    <Input placeholder="Digite uma mensagem..." className="flex-1 bg-background" />
-                                    <button className="p-2 bg-primary rounded-md text-primary-foreground hover:bg-primary/90">
+                                    <Input
+                                        placeholder="Digite uma mensagem..."
+                                        className="flex-1 bg-background"
+                                        value={inputText}
+                                        onChange={(e) => setInputText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSendMessage();
+                                        }}
+                                    />
+                                    <button
+                                        className="p-2 bg-primary rounded-md text-primary-foreground hover:bg-primary/90"
+                                        onClick={handleSendMessage}
+                                        disabled={!inputText.trim()}
+                                    >
                                         <MessageSquare className="h-5 w-5" />
                                     </button>
                                 </div>

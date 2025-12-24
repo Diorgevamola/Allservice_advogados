@@ -35,6 +35,20 @@ async function getCredentials() {
     };
 }
 
+
+function normalizeMessageType(type: string): string {
+    if (!type) return 'text';
+    const lower = type.toLowerCase();
+    if (lower.includes('audio')) return 'audio';
+    if (lower.includes('image')) return 'image';
+    if (lower.includes('video')) return 'video';
+    if (lower.includes('document')) return 'document';
+    if (lower.includes('sticker')) return 'sticker';
+    if (lower.includes('location')) return 'location';
+    if (lower.includes('contact')) return 'contact';
+    return lower.replace('message', '');
+}
+
 export async function fetchChats(page: number = 1, limit: number = 20): Promise<UazapiResponse<UazapiChat>> {
     try {
         const { token, url } = await getCredentials();
@@ -58,7 +72,17 @@ export async function fetchChats(page: number = 1, limit: number = 20): Promise<
             throw new Error(`API Error: ${response.status}`);
         }
 
-        return await response.json();
+        const data: UazapiResponse<UazapiChat> = await response.json();
+
+        // Normalize chat last message types
+        const chats = data.chats || data.response || [];
+        chats.forEach(chat => {
+            if (chat.wa_lastMessageType) {
+                chat.wa_lastMessageType = normalizeMessageType(chat.wa_lastMessageType);
+            }
+        });
+
+        return data;
     } catch (error: any) {
         console.error("fetchChats error:", error);
         return { response: [], count: 0, status: 500, error: error.message };
@@ -88,9 +112,57 @@ export async function fetchMessages(chatId: string, limit: number = 50): Promise
             throw new Error(`API Error: ${response.status}`);
         }
 
-        return await response.json();
+        const data: UazapiResponse<UazapiMessage> = await response.json();
+
+        // Normalize message types
+        const messages = data.messages || data.response || [];
+        messages.forEach(msg => {
+            if (msg.messageType) {
+                msg.messageType = normalizeMessageType(msg.messageType);
+            }
+        });
+
+        return data;
     } catch (error: any) {
         console.error("fetchMessages error:", error);
         return { response: [], count: 0, status: 500, error: error.message };
+    }
+}
+
+export async function getLeadDetails(phone: string) {
+    try {
+        const cookieStore = await cookies();
+        const session = cookieStore.get('session');
+
+        if (!session?.value) {
+            return null;
+        }
+
+        const userId = parseInt(session.value);
+        // Sanitize phone: remove non-digits
+        // Standardize: if starts with +55, keeps it. If 55, keeps it. 
+        // The table likely has formatting or just digits. 
+        // The check_schema showed '553182964672' (just digits).
+        const sanitizedPhone = phone.replace(/\D/g, '');
+
+        const supabase = createClient();
+
+        // Try to find the lead
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .select('*')
+            .eq('ID_empresa', userId)
+            .eq('telefone', sanitizedPhone)
+            .maybeSingle();
+
+        if (error) {
+            console.error("getLeadDetails error:", error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error("getLeadDetails exception:", error);
+        return null;
     }
 }

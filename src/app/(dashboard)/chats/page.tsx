@@ -81,7 +81,7 @@ export default function ChatsPage() {
     return (
         <div className="flex h-[calc(100vh-80px)] overflow-hidden p-6 gap-6">
             {/* Chat List */}
-            <Card className="w-1/3 flex flex-col bg-card/50 backdrop-blur-sm border-border">
+            <Card className="w-1/3 flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-hidden">
                 <div className="p-4 border-b border-border space-y-4">
                     <h2 className="text-xl font-semibold text-foreground">Conversas</h2>
                     <div className="relative">
@@ -99,7 +99,7 @@ export default function ChatsPage() {
                         {error}
                     </div>
                 )}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 min-h-0">
                     {loadingChats ? (
                         <div className="p-4 text-center text-muted-foreground">Carregando...</div>
                     ) : (
@@ -143,7 +143,7 @@ export default function ChatsPage() {
             </Card>
 
             {/* Message Area */}
-            <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-border">
+            <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-border overflow-hidden">
                 {selectedChat ? (
                     <>
                         <div className="p-4 border-b border-border flex justify-between items-center bg-card/80">
@@ -165,7 +165,7 @@ export default function ChatsPage() {
                             </div>
                         </div>
 
-                        <ScrollArea className="flex-1 p-4">
+                        <ScrollArea className="flex-1 min-h-0 p-4">
                             <div className="space-y-4 flex flex-col">
                                 {loadingMessages ? (
                                     <div className="text-center text-muted-foreground mt-10">Carregando mensagens...</div>

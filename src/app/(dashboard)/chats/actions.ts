@@ -79,7 +79,7 @@ export async function fetchMessages(chatId: string, limit: number = 50): Promise
             body: JSON.stringify({
                 chatid: chatId,
                 limit: limit,
-                sort: "-wa_timestamp" // Usually we want newest first, but UI might invert. Let's get newest.
+                sort: "-messageTimestamp" // Correct field from Uazapi docs
             }),
             next: { revalidate: 0 }
         });

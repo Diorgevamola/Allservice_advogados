@@ -32,6 +32,14 @@ export default function ChatsPage() {
         }
     }, [selectedChat]);
 
+    // Scroll to bottom when messages update
+    useEffect(() => {
+        const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+    }, [messages]);
+
     async function loadChats() {
         setLoadingChats(true);
         setError(null);
@@ -178,7 +186,18 @@ export default function ChatsPage() {
                                                 : 'bg-muted text-foreground self-start rounded-bl-none'
                                                 }`}
                                         >
-                                            <p>{msg.text}</p>
+                                            <p>
+                                                {msg.text || (
+                                                    <span className="italic opacity-70">
+                                                        {msg.messageType === 'image' ? '📷 Foto' :
+                                                            msg.messageType === 'video' ? '🎥 Vídeo' :
+                                                                msg.messageType === 'audio' ? '🎙️ Áudio' :
+                                                                    msg.messageType === 'document' ? '📄 Documento' :
+                                                                        msg.messageType === 'sticker' ? '✨ Figurinha' :
+                                                                            `Mensagem (${msg.messageType})`}
+                                                    </span>
+                                                )}
+                                            </p>
                                             <span className="text-[10px] opacity-70 block text-right mt-1">
                                                 {format(new Date(msg.messageTimestamp), 'HH:mm')}
                                             </span>

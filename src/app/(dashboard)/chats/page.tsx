@@ -427,6 +427,19 @@ function ChatsContent() {
         return '';
     };
 
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Concluído':
+                return 'text-green-500 bg-green-500/10 border-green-500/20';
+            case 'Desqualificado':
+                return 'text-red-500 bg-red-500/10 border-red-500/20';
+            case 'Em andamento':
+                return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+            default:
+                return 'text-muted-foreground bg-muted/50 border-border';
+        }
+    };
+
     return (
         <div className="flex h-full overflow-hidden">
             {/* Chat List Sider - Full width on mobile, hidden when chat selected */}
@@ -634,13 +647,13 @@ function ChatsContent() {
                                                 value={leadDetails.Status || leadDetails.status || "Em andamento"}
                                                 onValueChange={handleStatusChange}
                                             >
-                                                <SelectTrigger className="w-[140px] h-8 text-xs bg-muted/50 border-border">
+                                                <SelectTrigger className={`w-[140px] h-8 text-xs font-medium border ${getStatusColor(leadDetails.Status || leadDetails.status || "Em andamento")}`}>
                                                     <SelectValue placeholder="Status" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Em andamento">Em andamento</SelectItem>
-                                                    <SelectItem value="Concluído">Concluído</SelectItem>
-                                                    <SelectItem value="Desqualificado">Desqualificado</SelectItem>
+                                                    <SelectItem value="Em andamento" className="text-yellow-500">Em andamento</SelectItem>
+                                                    <SelectItem value="Concluído" className="text-green-500">Concluído</SelectItem>
+                                                    <SelectItem value="Desqualificado" className="text-red-500">Desqualificado</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>

@@ -550,11 +550,6 @@ function ChatsContent() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline mb-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
-                                                    {chat.isCompleted && (
-                                                        <div title="Atendimento Concluído">
-                                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                                        </div>
-                                                    )}
                                                     {chat.isAIEnabled ? (
                                                         <div title="Atendimento por IA">
                                                             <Bot className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -575,17 +570,6 @@ function ChatsContent() {
                                             </p>
                                         </div>
 
-                                        {/* Status Indicator - Absolute Positioned */}
-                                        {chat.status && (
-                                            <div
-                                                className={`absolute top-3 right-3 h-3 w-3 rounded-full border border-background shadow-sm z-50 ${chat.status.toLowerCase() === 'concluído' || chat.status.toLowerCase() === 'concluido' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                                                    chat.status.toLowerCase() === 'desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                                        chat.status.toLowerCase() === 'em andamento' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]' :
-                                                            'bg-gray-400'
-                                                    }`}
-                                                title={chat.status}
-                                            />
-                                        )}
                                         {chat.wa_unreadCount > 0 && (
                                             <div className="flex flex-col justify-center">
                                                 <span className="h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-medium">

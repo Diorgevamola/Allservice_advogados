@@ -577,12 +577,11 @@ function ChatsContent() {
 
                                         {chat.status && (
                                             <div
-                                                className={`absolute right-4 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full border border-background shadow-sm z-10 ${chat.status.toLowerCase() === 'concluído' || chat.status.toLowerCase() === 'concluido' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                                                        chat.status.toLowerCase() === 'desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                                            chat.status.toLowerCase() === 'em andamento' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]' :
-                                                                'hidden'
+                                                className={`absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-white/20 shadow-md z-50 ${chat.status.toLowerCase().includes('concluído') || chat.status.toLowerCase().includes('concluido') ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' :
+                                                        chat.status.toLowerCase().includes('desqualificado') ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' :
+                                                            'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]'
                                                     }`}
-                                                title={chat.status}
+                                                title={`Status: ${chat.status}`}
                                             />
                                         )}
 

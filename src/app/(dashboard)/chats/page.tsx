@@ -540,7 +540,7 @@ function ChatsContent() {
                                 {filteredChats.map((chat) => (
                                     <div
                                         key={chat.id || chat.wa_chatid}
-                                        className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors flex gap-3 ${selectedChat?.wa_chatid === chat.wa_chatid ? 'bg-muted' : ''}`}
+                                        className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors flex gap-3 relative ${selectedChat?.wa_chatid === chat.wa_chatid ? 'bg-muted' : ''}`}
                                         onClick={() => handleChatSelect(chat)}
                                     >
                                         <Avatar>
@@ -566,33 +566,35 @@ function ChatsContent() {
                                                     )}
                                                     <h3 className="font-semibold truncate text-sm">{chat.wa_name || chat.wa_contactName || chat.name || chat.wa_chatid}</h3>
                                                 </div>
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                        {chat.wa_lastMsgTimestamp ? format(new Date(chat.wa_lastMsgTimestamp * 1000), 'dd/MM HH:mm') : ''}
-                                                    </span>
-                                                    {/* Status Indicator */}
-                                                    {(chat.status === 'Em andamento' || chat.status === 'Concluído' || chat.status === 'Desqualificado') && (
-                                                        <div
-                                                            className={`h-2.5 w-2.5 rounded-full ${chat.status === 'Concluído' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
-                                                                    chat.status === 'Desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
-                                                                        'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]'
-                                                                }`}
-                                                            title={chat.status}
-                                                        />
-                                                    )}
-                                                </div>
+                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap mr-2">
+                                                    {chat.wa_lastMsgTimestamp ? format(new Date(chat.wa_lastMsgTimestamp * 1000), 'dd/MM HH:mm') : ''}
+                                                </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground truncate">
+                                            <p className="text-sm text-muted-foreground truncate pr-4">
                                                 {getLastMessageDisplay(chat)}
                                             </p>
                                         </div>
+
+                                        {/* Status Indicator - Absolute Positioned */}
+                                        {chat.status && (
+                                            <div
+                                                className={`absolute top-4 right-4 h-3 w-3 rounded-full border border-background shadow-sm ${chat.status.toLowerCase() === 'concluído' || chat.status.toLowerCase() === 'concluido' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
+                                                    chat.status.toLowerCase() === 'desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                                        chat.status.toLowerCase() === 'em andamento' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]' :
+                                                            'hidden'
+                                                    }`}
+                                                title={chat.status}
+                                            />
+                                        )}
+
                                         {chat.wa_unreadCount > 0 && (
                                             <div className="flex flex-col justify-center">
                                                 <span className="h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-medium">
                                                     {chat.wa_unreadCount}
                                                 </span>
                                             </div>
-                                        )}
+                                        )
+                                        }
                                     </div>
                                 ))}
 
@@ -618,10 +620,11 @@ function ChatsContent() {
                         )}
                     </div>
                 </ScrollArea>
-            </div>
+            </div >
 
             {/* Message Area - Full width on mobile, hidden when no chat selected */}
-            <Card className={`flex-1 flex flex-row bg-card/50 backdrop-blur-sm border-none rounded-none overflow-hidden relative ${selectedChat ? 'flex' : 'hidden md:flex'}`}>
+            < Card className={`flex-1 flex flex-row bg-card/50 backdrop-blur-sm border-none rounded-none overflow-hidden relative ${selectedChat ? 'flex' : 'hidden md:flex'}`
+            }>
                 <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 relative ${showProfile ? 'mr-[0px]' : ''}`}>
                     {selectedChat ? (
                         <>
@@ -835,90 +838,92 @@ function ChatsContent() {
                 </div>
 
                 {/* Profile Panel */}
-                {selectedChat && showProfile && (
-                    <div className="w-[300px] border-l border-border bg-card overflow-y-auto p-4 animate-in slide-in-from-right duration-300 absolute inset-y-0 right-0 shadow-lg z-10">
-                        <div className="flex flex-col items-center mb-6">
-                            <Avatar className="h-20 w-20 mb-3">
-                                <AvatarImage src={selectedChat.image || selectedChat.profileParams?.imgUrl} />
-                                <AvatarFallback>{(selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-lg font-light text-center">{selectedChat.wa_name || selectedChat.wa_contactName}</h2>
-                            <p className="text-sm text-muted-foreground">{selectedChat.phone || `+${selectedChat.wa_chatid.split('@')[0]}`}</p>
-                        </div>
+                {
+                    selectedChat && showProfile && (
+                        <div className="w-[300px] border-l border-border bg-card overflow-y-auto p-4 animate-in slide-in-from-right duration-300 absolute inset-y-0 right-0 shadow-lg z-10">
+                            <div className="flex flex-col items-center mb-6">
+                                <Avatar className="h-20 w-20 mb-3">
+                                    <AvatarImage src={selectedChat.image || selectedChat.profileParams?.imgUrl} />
+                                    <AvatarFallback>{(selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <h2 className="text-lg font-light text-center">{selectedChat.wa_name || selectedChat.wa_contactName}</h2>
+                                <p className="text-sm text-muted-foreground">{selectedChat.phone || `+${selectedChat.wa_chatid.split('@')[0]}`}</p>
+                            </div>
 
-                        {leadDetails ? (
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Informações do Lead</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Status:</span>
-                                            <span className="font-medium text-foreground">{leadDetails.Status || leadDetails.status || '-'}</span>
+                            {leadDetails ? (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Informações do Lead</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Status:</span>
+                                                <span className="font-medium text-foreground">{leadDetails.Status || leadDetails.status || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Criado em:</span>
+                                                <span className="font-medium text-foreground">
+                                                    {leadDetails.created_at ? format(new Date(leadDetails.created_at), 'dd/MM/yyyy') : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Follow-up 1:</span>
+                                                <span className={`font-medium ${leadDetails.follow_up_1_enviado ? 'text-green-500' : 'text-foreground'}`}>
+                                                    {leadDetails.follow_up_1_enviado ? 'Enviado' : 'Pendente'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Follow-up 2:</span>
+                                                <span className={`font-medium ${leadDetails.follow_up_2_enviado ? 'text-green-500' : 'text-foreground'}`}>
+                                                    {leadDetails.follow_up_2_enviado ? 'Enviado' : 'Pendente'}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Criado em:</span>
-                                            <span className="font-medium text-foreground">
-                                                {leadDetails.created_at ? format(new Date(leadDetails.created_at), 'dd/MM/yyyy') : '-'}
-                                            </span>
+                                    </div>
+
+                                    {leadDetails['resumo da conversa'] && (
+                                        <div>
+                                            <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Resumo</h3>
+                                            <p className="text-sm bg-muted/30 p-2 rounded-md border border-border">
+                                                {leadDetails['resumo da conversa']}
+                                            </p>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Follow-up 1:</span>
-                                            <span className={`font-medium ${leadDetails.follow_up_1_enviado ? 'text-green-500' : 'text-foreground'}`}>
-                                                {leadDetails.follow_up_1_enviado ? 'Enviado' : 'Pendente'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Follow-up 2:</span>
-                                            <span className={`font-medium ${leadDetails.follow_up_2_enviado ? 'text-green-500' : 'text-foreground'}`}>
-                                                {leadDetails.follow_up_2_enviado ? 'Enviado' : 'Pendente'}
-                                            </span>
+                                    )}
+
+                                    <div>
+                                        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Perguntas Respondidas</h3>
+                                        <div className="space-y-1 text-sm">
+                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => {
+                                                const val = leadDetails[`t${i}`];
+                                                if (val === true || val === 'true' || val === 'TRUE') {
+                                                    return (
+                                                        <div key={i} className="flex items-center gap-2">
+                                                            <span className="h-4 w-4 bg-green-500/20 text-green-500 rounded flex items-center justify-center text-[10px] font-medium">✓</span>
+                                                            <span>Pergunta T{i}</span>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })}
+                                            {![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].some(i => leadDetails[`t${i}`] === true) && (
+                                                <span className="text-muted-foreground italic text-xs">Nenhuma resposta registrada.</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-
-                                {leadDetails['resumo da conversa'] && (
-                                    <div>
-                                        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Resumo</h3>
-                                        <p className="text-sm bg-muted/30 p-2 rounded-md border border-border">
-                                            {leadDetails['resumo da conversa']}
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="p-4 text-center border border-dashed border-border rounded-lg bg-muted/20">
+                                        <p className="text-sm text-muted-foreground">
+                                            Lead não encontrado na base de dados para este telefone.
                                         </p>
                                     </div>
-                                )}
-
-                                <div>
-                                    <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Perguntas Respondidas</h3>
-                                    <div className="space-y-1 text-sm">
-                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => {
-                                            const val = leadDetails[`t${i}`];
-                                            if (val === true || val === 'true' || val === 'TRUE') {
-                                                return (
-                                                    <div key={i} className="flex items-center gap-2">
-                                                        <span className="h-4 w-4 bg-green-500/20 text-green-500 rounded flex items-center justify-center text-[10px] font-medium">✓</span>
-                                                        <span>Pergunta T{i}</span>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        })}
-                                        {![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].some(i => leadDetails[`t${i}`] === true) && (
-                                            <span className="text-muted-foreground italic text-xs">Nenhuma resposta registrada.</span>
-                                        )}
-                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="p-4 text-center border border-dashed border-border rounded-lg bg-muted/20">
-                                    <p className="text-sm text-muted-foreground">
-                                        Lead não encontrado na base de dados para este telefone.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Card>
-        </div>
+                            )}
+                        </div>
+                    )
+                }
+            </Card >
+        </div >
     );
 }
 

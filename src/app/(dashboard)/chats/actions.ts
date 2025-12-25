@@ -119,6 +119,15 @@ export async function fetchChats(page: number = 1, limit: number = 20): Promise<
             }
         });
 
+        // CRITICAL: Assign enriched chats back to the response object
+        // Without this, the Supabase enrichment (status, isAIEnabled, etc.) is lost!
+        if (data.chats) {
+            data.chats = chats;
+        }
+        if (data.response) {
+            data.response = chats;
+        }
+
         return data;
     } catch (error: any) {
         console.error("fetchChats error:", error);

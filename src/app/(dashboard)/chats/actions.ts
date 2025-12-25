@@ -355,3 +355,36 @@ export async function resendLatestMessages(name: string, phone: string, text: st
         return { success: false, error: error.message };
     }
 }
+export async function updateLeadStatus(phone: string, newStatus: string) {
+    try {
+        const cookieStore = await cookies();
+        const session = cookieStore.get('session');
+
+        if (!session?.value) {
+            throw new Error("Usuário não autenticado");
+        }
+
+        const userId = parseInt(session.value);
+        const sanitizedPhone = phone.replace(/\D/g, '');
+
+        const supabase = createClient();
+
+        // Update lead status
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .update({ 'Status': newStatus })
+            .eq('ID_empresa', userId)
+            .eq('telefone', sanitizedPhone)
+            .select();
+
+        if (error) {
+            console.error("updateLeadStatus error:", error);
+            throw new Error(`Falha ao atualizar Status: ${error.message}`);
+        }
+
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("updateLeadStatus exception:", error);
+        return { success: false, error: error.message };
+    }
+}

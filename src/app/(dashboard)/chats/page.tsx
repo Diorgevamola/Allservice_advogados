@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { fetchChats, fetchMessages, getLeadDetails, sendMessage, deleteMessage, toggleLeadAI, resendLatestMessages } from './actions';
+import { fetchChats, fetchMessages, getLeadDetails, sendMessage, deleteMessage, toggleLeadAI, resendLatestMessages, updateLeadStatus } from './actions';
 import { UazapiChat, UazapiMessage } from '@/lib/uazapi';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -39,6 +39,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 function ChatsContent() {
     const searchParams = useSearchParams();
@@ -353,6 +360,29 @@ function ChatsContent() {
         }
     }
 
+    async function handleStatusChange(newStatus: string) {
+        if (!selectedChat) return;
+        const phone = selectedChat.phone || selectedChat.wa_chatid.split('@')[0];
+
+        // Optimistic update
+        if (leadDetails) {
+            setLeadDetails({ ...leadDetails, Status: newStatus });
+        }
+
+        const res = await updateLeadStatus(phone, newStatus);
+
+        if (res.success) {
+            toast.success(`Status atualizado para: ${newStatus}`);
+            // Update list status as well
+            setChats(prev => prev.map(c =>
+                c.wa_chatid === selectedChat.wa_chatid ? { ...c, status: newStatus, isCompleted: newStatus === 'Concluído' } : c
+            ));
+        } else {
+            toast.error("Erro ao atualizar status");
+            // Revert if needed, but we'll fetch details again anyway
+        }
+    }
+
     const filteredChats = chats.filter(chat => {
         const name = (chat.wa_name || chat.wa_contactName || chat.name || chat.wa_chatid || '').toLowerCase();
         const matchesSearch = name.includes(searchQuery.toLowerCase());
@@ -596,7 +626,25 @@ function ChatsContent() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2 text-muted-foreground">
+                                <div className="flex gap-2 items-center text-muted-foreground bg-card">
+                                    {/* Status Selector */}
+                                    {leadDetails && (
+                                        <div className="mr-2">
+                                            <Select
+                                                value={leadDetails.Status || leadDetails.status || "Em andamento"}
+                                                onValueChange={handleStatusChange}
+                                            >
+                                                <SelectTrigger className="w-[140px] h-8 text-xs bg-muted/50 border-border">
+                                                    <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Em andamento">Em andamento</SelectItem>
+                                                    <SelectItem value="Concluído">Concluído</SelectItem>
+                                                    <SelectItem value="Desqualificado">Desqualificado</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                     <Phone className="h-5 w-5 cursor-pointer hover:text-foreground" />
                                     <MoreVertical className="h-5 w-5 cursor-pointer hover:text-foreground" onClick={() => setShowProfile(!showProfile)} />
                                 </div>

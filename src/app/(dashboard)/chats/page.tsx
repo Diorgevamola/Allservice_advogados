@@ -533,7 +533,7 @@ function ChatsContent() {
                                         </div>
                                         {chat.wa_unreadCount > 0 && (
                                             <div className="flex flex-col justify-center">
-                                                <span className="h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-bold">
+                                                <span className="h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-medium">
                                                     {chat.wa_unreadCount}
                                                 </span>
                                             </div>
@@ -769,14 +769,14 @@ function ChatsContent() {
                                 <AvatarImage src={selectedChat.image || selectedChat.profileParams?.imgUrl} />
                                 <AvatarFallback>{(selectedChat.wa_name || selectedChat.wa_contactName || selectedChat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
                             </Avatar>
-                            <h2 className="text-lg font-bold text-center">{selectedChat.wa_name || selectedChat.wa_contactName}</h2>
+                            <h2 className="text-lg font-light text-center">{selectedChat.wa_name || selectedChat.wa_contactName}</h2>
                             <p className="text-sm text-muted-foreground">{selectedChat.phone || `+${selectedChat.wa_chatid.split('@')[0]}`}</p>
                         </div>
 
                         {leadDetails ? (
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Informações do Lead</h3>
+                                    <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Informações do Lead</h3>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Status:</span>
@@ -805,7 +805,7 @@ function ChatsContent() {
 
                                 {leadDetails['resumo da conversa'] && (
                                     <div>
-                                        <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Resumo</h3>
+                                        <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Resumo</h3>
                                         <p className="text-sm bg-muted/30 p-2 rounded-md border border-border">
                                             {leadDetails['resumo da conversa']}
                                         </p>
@@ -813,14 +813,14 @@ function ChatsContent() {
                                 )}
 
                                 <div>
-                                    <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Perguntas Respondidas</h3>
+                                    <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Perguntas Respondidas</h3>
                                     <div className="space-y-1 text-sm">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => {
                                             const val = leadDetails[`t${i}`];
                                             if (val === true || val === 'true' || val === 'TRUE') {
                                                 return (
                                                     <div key={i} className="flex items-center gap-2">
-                                                        <span className="h-4 w-4 bg-green-500/20 text-green-500 rounded flex items-center justify-center text-[10px] font-bold">✓</span>
+                                                        <span className="h-4 w-4 bg-green-500/20 text-green-500 rounded flex items-center justify-center text-[10px] font-medium">✓</span>
                                                         <span>Pergunta T{i}</span>
                                                     </div>
                                                 );

@@ -117,8 +117,8 @@ export default function ProfilePage() {
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    Meu Perfil
+                <h1 className="text-3xl font-light tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    {profile["Escritório"] || "Meu Perfil"}
                 </h1>
 
                 {/* Status Indicator */}

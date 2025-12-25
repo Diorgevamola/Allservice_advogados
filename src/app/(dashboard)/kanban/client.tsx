@@ -371,7 +371,7 @@ export default function KanbanClient({ initialLeads }: { initialLeads: Lead[] })
                         <>
                             <SheetHeader className="p-8 pb-6 border-b border-white/5 flex-shrink-0">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-bold bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10`}>
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-light bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10`}>
                                         {selectedLead.nome?.[0] || "?"}
                                     </div>
                                     <div>
@@ -437,7 +437,7 @@ export default function KanbanClient({ initialLeads }: { initialLeads: Lead[] })
                                                 const value = selectedLead[key as keyof Lead]
                                                 return (
                                                     <div key={key} className={`p-3 rounded-xl border ${value ? 'border-primary/30 bg-primary/5 text-primary' : 'border-white/5 bg-white/5 text-zinc-500 opacity-50'} transition-all`}>
-                                                        <div className="text-[10px] font-bold uppercase tracking-tighter mb-1">Passo {i + 1}</div>
+                                                        <div className="text-[10px] font-medium uppercase tracking-tighter mb-1">Passo {i + 1}</div>
                                                         <div className="text-xs truncate font-medium">{String(value || '-')}</div>
                                                     </div>
                                                 )
@@ -448,13 +448,13 @@ export default function KanbanClient({ initialLeads }: { initialLeads: Lead[] })
                                     {/* Dates and Meta */}
                                     <div className="grid grid-cols-2 gap-4 pb-4">
                                         <div className="space-y-1">
-                                            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Criado em</div>
+                                            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Criado em</div>
                                             <div className="text-sm font-light text-zinc-300">
                                                 {format(new Date(selectedLead.created_at), "dd MMMM yyyy", { locale: ptBR })}
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Horário</div>
+                                            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Horário</div>
                                             <div className="text-sm font-light text-zinc-300">
                                                 {format(new Date(selectedLead.created_at), "HH:mm'h'", { locale: ptBR })}
                                             </div>

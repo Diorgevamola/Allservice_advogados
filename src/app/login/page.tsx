@@ -38,7 +38,7 @@ export default function LoginPage() {
                             className="h-full w-full object-cover"
                         />
                     </div>
-                    <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    <CardTitle className="text-3xl font-light text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                         AllService AI
                     </CardTitle>
                     <CardDescription className="text-center text-muted-foreground">

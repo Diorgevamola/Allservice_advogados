@@ -89,7 +89,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-lg font-bold truncate bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                        className="text-lg font-light truncate bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
                     >
                         {officeName}
                     </motion.span>
@@ -174,7 +174,7 @@ export function MobileHeader({ onMenuClick, officeName }: { onMenuClick: () => v
             >
                 <Menu className="h-6 w-6" />
             </Button>
-            <span className="text-sm font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-sm font-light bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {officeName}
             </span>
             <div className="w-10" /> {/* Spacer for centering */}

@@ -136,7 +136,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                     }}
                 >
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-1">
+                        <h2 className="text-2xl font-light text-white mb-1">
                             Evolução de Leads
                         </h2>
                         <p className="text-sm text-zinc-400">Desempenho no período selecionado</p>
@@ -308,7 +308,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                                 minWidth: "180px"
                             }}
                         >
-                            <div className="text-zinc-200 font-bold text-sm mb-2 text-center">
+                            <div className="text-zinc-200 font-medium text-sm mb-2 text-center">
                                 {formatDate(hoveredPoint.date)}
                             </div>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">

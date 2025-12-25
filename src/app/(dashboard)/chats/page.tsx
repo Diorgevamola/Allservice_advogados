@@ -579,15 +579,17 @@ function ChatsContent() {
                                         {chat.status && (
                                             <div
                                                 className={`absolute top-3 right-3 h-3 w-3 rounded-full border border-background shadow-sm z-50 ${chat.status.toLowerCase() === 'concluído' || chat.status.toLowerCase() === 'concluido' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                                                        chat.status.toLowerCase() === 'desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
-                                                            chat.status.toLowerCase() === 'em andamento' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]' :
-                                                                'bg-gray-400'
+                                                    chat.status.toLowerCase() === 'desqualificado' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' :
+                                                        chat.status.toLowerCase() === 'em andamento' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]' :
+                                                            'bg-gray-400'
                                                     }`}
                                                 title={chat.status}
                                             />
                                         )}
                                         {/* TEMPORARY DEBUG: Show status text */}
-                                        {/* <div className="absolute top-0 right-0 text-[8px] text-pink-500 bg-white z-50">{chat.status}</div> */}
+                                        <div className="absolute bottom-2 right-2 text-[10px] text-pink-600 bg-white/90 px-1 rounded z-50 font-bold border border-pink-200">
+                                            {chat.status ? `Status: ${chat.status}` : 'No Status'} | {chat.phone}
+                                        </div>
 
                                         {chat.wa_unreadCount > 0 && (
                                             <div className="flex flex-col justify-center">

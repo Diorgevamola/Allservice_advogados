@@ -205,18 +205,47 @@ export async function fetchAdminStats(): Promise<AdminStats> {
     };
 }
 
-export async function fetchGlobalLeads() {
-    // Fetch ALL leads from 'Todos os clientes'
-    const { data: leads, error } = await supabase
+export async function fetchGlobalLeads(offset: number = 0, limit: number = 20) {
+    // Fetch paginated leads from 'Todos os clientes'
+    const { data: leads, error, count } = await supabase
         .from('Todos os clientes')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
     if (error) {
         console.error('Error fetching global leads:', error);
-        return [];
+        return { leads: [], count: 0, hasMore: false };
     }
-    return leads || [];
+
+    // Fetch company names for enrichment
+    const companyIds = [...new Set((leads || []).map((l: any) => l.ID_empresa).filter(Boolean))];
+    let companyMap: Record<string, string> = {};
+
+    if (companyIds.length > 0) {
+        const { data: companies } = await supabase
+            .from('numero_dos_atendentes')
+            .select('id, Escritório, nome')
+            .in('id', companyIds);
+
+        if (companies) {
+            companies.forEach((c: any) => {
+                companyMap[String(c.id)] = c['Escritório'] || c.nome || 'Sem Nome';
+            });
+        }
+    }
+
+    // Enrich leads with company name
+    const enrichedLeads = (leads || []).map((lead: any) => ({
+        ...lead,
+        companyName: companyMap[String(lead.ID_empresa)] || 'Desconhecido'
+    }));
+
+    return {
+        leads: enrichedLeads,
+        count: count || 0,
+        hasMore: (offset + limit) < (count || 0)
+    };
 }
 
 export async function fetchGlobalDistribuicao() {

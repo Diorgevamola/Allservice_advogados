@@ -8,6 +8,7 @@ export type TimeRange = 'today' | 'yesterday' | '7days' | '30days';
 
 export interface DashboardStats {
     qualified: number;
+    inProgress: number; // New field
     total: number;
     disqualified: number;
     funnel: {
@@ -30,7 +31,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     if (!userId) {
         console.error("User ID not found in session");
-        return { qualified: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
+        return { qualified: 0, inProgress: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
     }
 
     // Fetch 'Todos os clientes' based on created_at AND ID_empresa
@@ -53,7 +54,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     if (error) {
         console.error('Error fetching data:', error);
-        return { qualified: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
+        return { qualified: 0, inProgress: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
     }
 
     const leads = data || [];
@@ -61,14 +62,19 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     let qualified = 0;
     let disqualified = 0;
+    let inProgress = 0;
 
     leads.forEach((lead: any) => {
         // Qualified logic: Status column is 'Concluído'
-        // Note: 'Status' (capital S) as per CSV structure
-        if (lead.Status === 'Concluído') {
+        const status = (lead.Status || '').toLowerCase();
+
+        if (status === 'concluído' || status === 'concluido') {
             qualified++;
-        } else {
+        } else if (status === 'desqualificado') {
             disqualified++;
+        } else {
+            // Everything else is considered In Progress (Em andamento, empty, null)
+            inProgress++;
         }
     });
 
@@ -99,6 +105,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     return {
         qualified,
+        inProgress,
         total,
         disqualified,
         funnel,

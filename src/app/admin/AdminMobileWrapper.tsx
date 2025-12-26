@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from "react";
-import { Sidebar, MobileHeader } from "@/components/layout/Sidebar";
+import { MobileHeader } from "@/components/layout/Sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export function AdminMobileWrapper({ children }: { children: React.ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,7 +17,7 @@ export function AdminMobileWrapper({ children }: { children: React.ReactNode }) 
 
             {/* Desktop Sidebar */}
             <div className="hidden md:block">
-                <Sidebar isAdmin={true} />
+                <AdminSidebar />
             </div>
 
             {/* Mobile Sidebar */}
@@ -27,10 +28,9 @@ export function AdminMobileWrapper({ children }: { children: React.ReactNode }) 
                         onClick={() => setIsMobileMenuOpen(false)}
                     />
                     <div className="absolute left-0 top-0 h-full w-[280px] animate-in slide-in-from-left duration-300">
-                        <Sidebar
+                        <AdminSidebar
                             isMobileOpen={isMobileMenuOpen}
                             onMobileClose={() => setIsMobileMenuOpen(false)}
-                            isAdmin={true}
                         />
                     </div>
                 </div>

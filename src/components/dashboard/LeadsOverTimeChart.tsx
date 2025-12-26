@@ -190,7 +190,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                             {[0, 0.25, 0.5, 0.75, 1].map((val) => {
                                 const yVal = Math.round(effectiveMax * val);
                                 return (
-                                    <g key={val}>
+                                    <g key={`grid-${val}`}>
                                         <line
                                             x1={padding.left}
                                             y1={getY(yVal)}
@@ -214,12 +214,12 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                             })}
 
                             {/* X-axis labels (Dates) */}
-                            {data.length > 0 && [0, 0.25, 0.5, 0.75, 1].map((val) => {
+                            {data.length > 0 && [0, 0.25, 0.5, 0.75, 1].map((val, i) => {
                                 const index = Math.min(Math.floor(val * (data.length - 1)), data.length - 1);
                                 const point = data[index];
                                 return (
                                     <text
-                                        key={index}
+                                        key={`label-${i}`}
                                         x={getX(index)}
                                         y={height - padding.bottom + 20}
                                         fill="#71717a"

@@ -397,3 +397,96 @@ export async function updateLeadStatus(phone: string, newStatus: string) {
         return { success: false, error: error.message };
     }
 }
+
+// ================== ADMIN-SPECIFIC FUNCTIONS ==================
+
+async function getCredentialsForOffice(officeId: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('numero_dos_atendentes')
+        .select('token_uazapi, url_uazapi')
+        .eq('id', officeId)
+        .single();
+
+    if (error || !data) {
+        console.error("Admin getCredentialsForOffice error:", error || "Missing data");
+        throw new Error(`Credenciais Uazapi não encontradas para escritório ${officeId}.`);
+    }
+
+    if (!data.token_uazapi || !data.url_uazapi) {
+        throw new Error("Token ou URL da Uazapi não configurados para este escritório.");
+    }
+
+    return {
+        token: data.token_uazapi,
+        url: data.url_uazapi
+    };
+}
+
+export async function fetchChatsForOffice(officeId: string, page: number = 1, limit: number = 20): Promise<UazapiResponse<UazapiChat>> {
+    try {
+        const { token, url } = await getCredentialsForOffice(officeId);
+        const endpoint = `${url}/chat/find`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                limit: limit,
+                offset: (page - 1) * limit,
+                sort: "-wa_lastMsgTimestamp"
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data: UazapiResponse<UazapiChat> = await response.json();
+        const chats = data.chats || data.response || [];
+
+        // Enrich with status from Supabase for the specific office
+        try {
+            const supabase = createClient();
+            const phones = chats.map(c => (c.phone || c.wa_chatid.split('@')[0]).replace(/\D/g, ''));
+
+            const { data: leadStatuses } = await supabase
+                .from('Todos os clientes')
+                .select('telefone, IA_responde, Status')
+                .eq('ID_empresa', officeId)
+                .in('telefone', phones);
+
+            if (leadStatuses) {
+                const statusMap = new Map(leadStatuses.map((l: any) => [l.telefone, l]));
+                chats.forEach(chat => {
+                    const p = (chat.phone || chat.wa_chatid.split('@')[0]).replace(/\D/g, '');
+                    const leadData = statusMap.get(p);
+                    if (leadData) {
+                        chat.isAIEnabled = leadData.IA_responde === true || leadData.IA_responde === 'true';
+                        chat.status = leadData.Status;
+                    }
+                });
+            }
+        } catch (supabaseError) {
+            console.error("Admin: Error enriching chats with Supabase status:", supabaseError);
+        }
+
+        chats.forEach(chat => {
+            if (chat.wa_lastMessageType) {
+                chat.wa_lastMessageType = normalizeMessageType(chat.wa_lastMessageType);
+            }
+        });
+
+        if (data.chats) data.chats = chats;
+        if (data.response) data.response = chats;
+
+        return data;
+    } catch (error: any) {
+        console.error("fetchChatsForOffice error:", error);
+        return { response: [], count: 0, status: 500, error: error.message };
+    }
+}

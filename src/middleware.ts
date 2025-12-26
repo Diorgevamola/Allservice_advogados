@@ -11,12 +11,25 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Redirect to dashboard if already logged in and trying to access /login
-    if (session && (pathname === '/login' || pathname === '/admin/login')) {
-        if (session.value.startsWith('admin:')) {
-            return NextResponse.redirect(new URL('/admin', request.url));
+    // Redirect to dashboard if already logged in
+    if (session) {
+        // If visiting Admin Login
+        if (pathname === '/admin/login') {
+            // If already Admin, go to Admin Dashboard
+            if (session.value.startsWith('admin:')) {
+                return NextResponse.redirect(new URL('/admin', request.url));
+            }
+            // If User, ALLOW access to Admin Login (to switch accounts)
+            return NextResponse.next();
         }
-        return NextResponse.redirect(new URL('/', request.url));
+
+        // If visiting User Login
+        if (pathname === '/login') {
+            if (session.value.startsWith('admin:')) {
+                return NextResponse.redirect(new URL('/admin', request.url));
+            }
+            return NextResponse.redirect(new URL('/', request.url));
+        }
     }
 
     return NextResponse.next();

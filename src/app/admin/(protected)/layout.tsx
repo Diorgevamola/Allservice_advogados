@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AdminMobileWrapper } from "./AdminMobileWrapper";
+import { AdminMobileWrapper } from "../AdminMobileWrapper";
 
 export default async function AdminLayout({
     children,

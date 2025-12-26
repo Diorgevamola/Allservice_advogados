@@ -54,7 +54,7 @@ export default function AdminLeadsPage() {
                                             {lead.created_at ? format(new Date(lead.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
                                         </TableCell>
                                         <TableCell className="text-right text-xs text-muted-foreground">
-                                            {lead.ID_empresa?.slice(0, 8)}...
+                                            {lead.ID_empresa ? String(lead.ID_empresa).slice(0, 8) : ''}...
                                         </TableCell>
                                     </TableRow>
                                 ))}

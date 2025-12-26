@@ -488,5 +488,45 @@ export async function fetchChatsForOffice(officeId: string, page: number = 1, li
     } catch (error: any) {
         console.error("fetchChatsForOffice error:", error);
         return { response: [], count: 0, status: 500, error: error.message };
+
+        export async function fetchMessagesForOffice(officeId: string, chatId: string, limit: number = 50): Promise<UazapiResponse<UazapiMessage>> {
+            try {
+                const { token, url } = await getCredentialsForOffice(officeId);
+                const endpoint = `${url}/message/find`;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'token': token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        chatid: chatId,
+                        limit: limit,
+                        sort: "-messageTimestamp"
+                    }),
+                    next: { revalidate: 0 }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data: UazapiResponse<UazapiMessage> = await response.json();
+                const messages = data.messages || data.response || [];
+                messages.forEach(msg => {
+                    if (msg.messageType) {
+                        msg.messageType = normalizeMessageType(msg.messageType);
+                    }
+                });
+
+                if (data.messages) data.messages = messages;
+                if (data.response) data.response = messages;
+
+                return data;
+            } catch (error: any) {
+                console.error("fetchMessagesForOffice error:", error);
+                return { response: [], count: 0, status: 500, error: error.message };
+            }
+        }
     }
-}

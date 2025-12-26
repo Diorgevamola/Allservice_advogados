@@ -143,3 +143,64 @@ export async function getAvailableScripts() {
 
     return Array.from(new Set(areas));
 }
+
+export interface AdminStats {
+    totalCompanies: number;
+    totalLeads: number;
+    leadsByCompany: {
+        id: string;
+        name: string;
+        office: string;
+        phone: string;
+        leadCount: number;
+    }[];
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+    // 1. Fetch all companies/users
+    const { data: companies, error: companiesError } = await supabase
+        .from('numero_dos_atendentes')
+        .select('id, nome, Escritório, telefone');
+
+    if (companiesError) {
+        console.error('Error fetching companies:', companiesError);
+        return { totalCompanies: 0, totalLeads: 0, leadsByCompany: [] };
+    }
+
+    // 2. Fetch all leads to aggregate counts
+    // We fetch ID_empresa to group by
+    const { data: leads, error: leadsError } = await supabase
+        .from('Todos os clientes')
+        .select('ID_empresa');
+
+    if (leadsError) {
+        console.error('Error fetching leads:', leadsError);
+        return { totalCompanies: companies?.length || 0, totalLeads: 0, leadsByCompany: [] };
+    }
+
+    const totalLeads = leads?.length || 0;
+
+    // 3. Aggregate leads by company
+    // Create a map for O(1) lookups or O(N) iteration
+    const leadCounts: Record<string, number> = {};
+    leads?.forEach((lead: any) => {
+        const companyId = lead.ID_empresa;
+        if (companyId) {
+            leadCounts[companyId] = (leadCounts[companyId] || 0) + 1;
+        }
+    });
+
+    const leadsByCompany = (companies || []).map((company: any) => ({
+        id: company.id,
+        name: company.nome || 'Sem Nome',
+        office: company['Escritório'] || 'Sem Escritório', // Handle potential column name mapping
+        phone: company.telefone || 'N/A',
+        leadCount: leadCounts[company.id] || 0
+    })).sort((a, b) => b.leadCount - a.leadCount); // Sort by most leads
+
+    return {
+        totalCompanies: companies?.length || 0,
+        totalLeads,
+        leadsByCompany
+    };
+}

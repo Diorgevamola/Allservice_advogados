@@ -19,6 +19,7 @@ function SubmitButton() {
 
 export default function LoginPage() {
     const [errorMessage, setErrorMessage] = useState('');
+    const [isAdmin, setIsAdmin] = useState(false);
 
     async function handleSubmit(formData: FormData) {
         const result = await loginAction(formData);
@@ -49,17 +50,34 @@ export default function LoginPage() {
                     <form action={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <label htmlFor="phone" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                Número de Telefone (ex: 55619...)
+                                Telefone ou E-mail
                             </label>
                             <input
                                 id="phone"
                                 name="phone"
-                                type="tel"
+                                type="text"
                                 required
+                                onChange={(e) => setIsAdmin(e.target.value.includes('@'))}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Insira seu número de telefone..."
+                                placeholder="Telefone ou admin@email.com"
                             />
                         </div>
+
+                        {isAdmin && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Senha de Administrador
+                                </label>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    required
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="Digite sua senha..."
+                                />
+                            </div>
+                        )}
                         {errorMessage && (
                             <div className="text-sm text-red-500 font-medium">
                                 {errorMessage}

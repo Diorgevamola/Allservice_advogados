@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader } from "@/components/layout/Sidebar";
 import { usePathname } from 'next/navigation';
 import { getUserProfile } from "@/app/(dashboard)/perfil/actions";
+import { checkIsAdmin } from "@/app/actions";
 
 export default function DashboardLayout({
     children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [officeName, setOfficeName] = useState("AllService AI");
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const isChatsPage = pathname === '/chats';
     const isKanbanPage = pathname === '/kanban';
@@ -22,17 +24,22 @@ export default function DashboardLayout({
     const isNoPadding = isChatsPage || isKanbanPage;
 
     useEffect(() => {
-        async function loadProfile() {
+        async function loadData() {
             try {
-                const profile = await getUserProfile();
+                const [profile, adminStatus] = await Promise.all([
+                    getUserProfile(),
+                    checkIsAdmin()
+                ]);
+
                 if (profile && profile["Escritório"]) {
                     setOfficeName(profile["Escritório"]);
                 }
+                setIsAdmin(adminStatus);
             } catch (error) {
-                console.error("Erro ao carregar nome do escritório:", error);
+                console.error("Erro ao carregar dados do usuário:", error);
             }
         }
-        loadProfile();
+        loadData();
     }, []);
 
     // Close mobile menu on route change
@@ -50,7 +57,7 @@ export default function DashboardLayout({
 
             {/* Desktop Sidebar - hidden on mobile */}
             <div className="hidden md:block">
-                <Sidebar />
+                <Sidebar isAdmin={isAdmin} />
             </div>
 
             {/* Mobile Sidebar Overlay */}
@@ -66,6 +73,7 @@ export default function DashboardLayout({
                         <Sidebar
                             isMobileOpen={isMobileMenuOpen}
                             onMobileClose={() => setIsMobileMenuOpen(false)}
+                            isAdmin={isAdmin}
                         />
                     </div>
                 </div>

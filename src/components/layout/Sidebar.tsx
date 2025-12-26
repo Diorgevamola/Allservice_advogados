@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, User, ChevronLeft, ChevronRight, LogOut, Users, MessageSquare, Layout, Menu, X } from "lucide-react";
+import { LayoutDashboard, User, ChevronLeft, ChevronRight, LogOut, Users, MessageSquare, Layout, Menu, X, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/app/actions";
@@ -47,12 +47,17 @@ const sidebarItems = [
 interface SidebarProps {
     isMobileOpen?: boolean;
     onMobileClose?: () => void;
+    isAdmin?: boolean;
 }
 
-export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ isMobileOpen, onMobileClose, isAdmin }: SidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
     const [officeName, setOfficeName] = useState<string>("AllService AI");
     const pathname = usePathname();
+
+    const items = isAdmin
+        ? [{ title: "Painel Admin", href: "/admin", icon: Building2 }, ...sidebarItems]
+        : sidebarItems;
 
     useEffect(() => {
         async function loadProfile() {
@@ -118,7 +123,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
             </div>
 
             <nav className="flex-1 space-y-4 px-4 py-6">
-                {sidebarItems.map((item) => {
+                {items.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link

@@ -106,13 +106,13 @@ export default function AdminLeadsPage() {
                             <TableBody>
                                 {leads.map((lead, index) => (
                                     <TableRow key={`${lead.id}-${index}`}>
-                                        <TableCell className="font-medium">{lead.Nome || 'N/A'}</TableCell>
+                                        <TableCell className="font-medium">{lead.nome || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{lead.companyName}</TableCell>
                                         <TableCell>
                                             <span className={`px-2 py-1 rounded-full text-xs ${lead.Status === 'Concluído' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                    lead.Status === 'Desqualificado' ? 'bg-red-500/20 text-red-400' :
-                                                        lead.Status === 'Em andamento' ? 'bg-amber-500/20 text-amber-400' :
-                                                            'bg-zinc-700/50 text-zinc-400'
+                                                lead.Status === 'Desqualificado' ? 'bg-red-500/20 text-red-400' :
+                                                    lead.Status === 'Em andamento' ? 'bg-amber-500/20 text-amber-400' :
+                                                        'bg-zinc-700/50 text-zinc-400'
                                                 }`}>
                                                 {lead.Status || 'Novo'}
                                             </span>

@@ -56,7 +56,12 @@ export function Sidebar({ isMobileOpen, onMobileClose, isAdmin }: SidebarProps) 
     const pathname = usePathname();
 
     const items = isAdmin
-        ? [{ title: "Painel Admin", href: "/admin", icon: Building2 }, ...sidebarItems]
+        ? [
+            { title: "Dashboard", href: "/admin", icon: LayoutDashboard }, // Dashboard Admin
+            { title: "Leads", href: "/admin/leads", icon: Users },
+            { title: "Chats", href: "/admin/chats", icon: MessageSquare },
+            { title: "Distribuição", href: "/admin/distribuicao", icon: Users }
+        ]
         : sidebarItems;
 
     useEffect(() => {

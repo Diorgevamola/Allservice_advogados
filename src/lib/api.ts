@@ -204,3 +204,41 @@ export async function fetchAdminStats(): Promise<AdminStats> {
         leadsByCompany
     };
 }
+
+export async function fetchGlobalLeads() {
+    // Fetch ALL leads from 'Todos os clientes'
+    const { data: leads, error } = await supabase
+        .from('Todos os clientes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching global leads:', error);
+        return [];
+    }
+    return leads || [];
+}
+
+export async function fetchGlobalDistribuicao() {
+    // Fetch ALL from 'TeuCliente'
+    const { data, error } = await supabase
+        .from('TeuCliente')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching global distribuicao:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function fetchAllOffices() {
+    const { data, error } = await supabase
+        .from('numero_dos_atendentes')
+        .select('id, nome, Escritório')
+        .order('Escritório', { ascending: true });
+
+    if (error) return [];
+    return data || [];
+}

@@ -11,6 +11,11 @@ import { motion } from "motion/react";
 
 const adminItems = [
     {
+        title: "Dashboard",
+        href: "/admin",
+        icon: LayoutDashboard,
+    },
+    {
         title: "Leads Globais",
         href: "/admin/leads",
         icon: Users,

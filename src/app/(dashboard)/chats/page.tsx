@@ -543,7 +543,11 @@ function ChatsContent() {
                                         className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors flex gap-3 relative ${selectedChat?.wa_chatid === chat.wa_chatid ? 'bg-muted' : ''}`}
                                         onClick={() => handleChatSelect(chat)}
                                     >
-                                        <Avatar>
+                                        <Avatar className={`border-2 border-background ${chat.status?.toLowerCase() === 'concluído' || chat.status?.toLowerCase() === 'concluido' ? 'ring-2 ring-green-500 ring-offset-1' :
+                                                chat.status?.toLowerCase() === 'desqualificado' ? 'ring-2 ring-red-500 ring-offset-1' :
+                                                    chat.status?.toLowerCase() === 'em andamento' ? 'ring-2 ring-yellow-500 ring-offset-1' :
+                                                        ''
+                                            }`}>
                                             <AvatarImage src={chat.image || chat.profileParams?.imgUrl} />
                                             <AvatarFallback>{(chat.wa_name || chat.wa_contactName || chat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>

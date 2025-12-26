@@ -544,9 +544,9 @@ function ChatsContent() {
                                         onClick={() => handleChatSelect(chat)}
                                     >
                                         <Avatar className={`border-2 border-background ${chat.status?.toLowerCase() === 'concluído' || chat.status?.toLowerCase() === 'concluido' ? 'ring-2 ring-green-500 ring-offset-1' :
-                                                chat.status?.toLowerCase() === 'desqualificado' ? 'ring-2 ring-red-500 ring-offset-1' :
-                                                    chat.status?.toLowerCase() === 'em andamento' ? 'ring-2 ring-yellow-500 ring-offset-1' :
-                                                        ''
+                                            chat.status?.toLowerCase() === 'desqualificado' ? 'ring-2 ring-red-500 ring-offset-1' :
+                                                chat.status?.toLowerCase() === 'em andamento' ? 'ring-2 ring-yellow-500 ring-offset-1' :
+                                                    ''
                                             }`}>
                                             <AvatarImage src={chat.image || chat.profileParams?.imgUrl} />
                                             <AvatarFallback>{(chat.wa_name || chat.wa_contactName || chat.name || "U")?.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -610,7 +610,7 @@ function ChatsContent() {
             </div >
 
             {/* Message Area - Full width on mobile, hidden when no chat selected */}
-            < Card className={`flex-1 flex flex-row bg-card/50 backdrop-blur-sm border-none rounded-none overflow-hidden relative ${selectedChat ? 'flex' : 'hidden md:flex'}`
+            <Card className={`flex-1 flex flex-row bg-card/50 backdrop-blur-sm border-none rounded-none overflow-hidden relative ${selectedChat ? 'flex' : 'hidden md:flex'}`
             }>
                 <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 relative ${showProfile ? 'mr-[0px]' : ''}`}>
                     {selectedChat ? (

@@ -41,7 +41,7 @@ export default function DashboardLayout({
     }, [pathname]);
 
     return (
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-[100dvh] overflow-hidden">
             {/* Mobile Header */}
             <MobileHeader
                 onMenuClick={() => setIsMobileMenuOpen(true)}

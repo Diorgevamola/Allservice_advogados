@@ -130,7 +130,7 @@ export default function AdminChatsPage() {
     });
 
     return (
-        <div className="space-y-4 h-[calc(100vh-100px)] flex flex-col">
+        <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
             <div className="flex items-center justify-between shrink-0">
                 <div>
                     <h1 className="text-3xl font-light tracking-tight text-foreground">Chats Globais</h1>
@@ -138,7 +138,7 @@ export default function AdminChatsPage() {
                 </div>
                 <div className="w-[300px]">
                     <Select value={selectedOffice} onValueChange={setSelectedOffice}>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-primary/50 bg-primary/10 ring-2 ring-primary/20 text-primary-foreground font-medium h-10">
                             <SelectValue placeholder="Selecione um Escritório" />
                         </SelectTrigger>
                         <SelectContent>

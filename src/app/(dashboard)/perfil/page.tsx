@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { getUserProfile, updateUserProfile, getInstanceStatus } from "./actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,20 +122,24 @@ export default function ProfilePage() {
                     {profile["Escritório"] || "Meu Perfil"}
                 </h1>
 
-                {/* Status Indicator */}
-                <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm p-3 rounded-xl border border-border/50 shadow-sm">
-                    <span className="text-xs font-medium text-muted-foreground mr-2">Status Uazapi:</span>
-                    {getStatusBadge()}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-1 text-muted-foreground hover:text-white"
-                        onClick={checkStatus}
-                        title="Atualizar Status"
-                        disabled={loadingStatus}
-                    >
-                        <RefreshCw className={`h-3 w-3 ${loadingStatus ? 'animate-spin' : ''}`} />
-                    </Button>
+
+                {/* Status Indicator & Theme Toggle */}
+                <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm p-3 rounded-xl border border-border/50 shadow-sm">
+                        <span className="text-xs font-medium text-muted-foreground mr-2">Status Uazapi:</span>
+                        {getStatusBadge()}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 ml-1 text-muted-foreground hover:text-white"
+                            onClick={checkStatus}
+                            title="Atualizar Status"
+                            disabled={loadingStatus}
+                        >
+                            <RefreshCw className={`h-3 w-3 ${loadingStatus ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
                 </div>
             </div>
 

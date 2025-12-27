@@ -12,6 +12,21 @@ export async function getUserProfile() {
     }
 
     const userId = session.value;
+
+    // Check if user is an admin
+    if (userId.startsWith('admin:')) {
+        return {
+            "Escritório": "Painel Administrativo",
+            "Nome do advogado": "Administrador",
+            "Endereço": "N/A",
+            "Tempo até alguém entrar em contato": "N/A",
+            "link da planilha": "#",
+            "token_uazapi": "",
+            "telefone": "",
+            "id": userId
+        };
+    }
+
     const supabase = createClient();
 
     const { data, error } = await supabase
@@ -22,7 +37,7 @@ export async function getUserProfile() {
 
     if (error) {
         console.error("Erro ao buscar perfil:", error);
-        throw new Error("Falha ao carregar dados do perfil");
+        throw new Error(`Falha ao carregar dados do perfil: ${error.message} (${error.code})`);
     }
 
     return data;

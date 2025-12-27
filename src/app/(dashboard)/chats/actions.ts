@@ -489,44 +489,187 @@ export async function fetchChatsForOffice(officeId: string, page: number = 1, li
         console.error("fetchChatsForOffice error:", error);
         return { response: [], count: 0, status: 500, error: error.message };
 
-        export async function fetchMessagesForOffice(officeId: string, chatId: string, limit: number = 50): Promise<UazapiResponse<UazapiMessage>> {
-            try {
-                const { token, url } = await getCredentialsForOffice(officeId);
-                const endpoint = `${url}/message/find`;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'token': token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        chatid: chatId,
-                        limit: limit,
-                        sort: "-messageTimestamp"
-                    }),
-                    next: { revalidate: 0 }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-
-                const data: UazapiResponse<UazapiMessage> = await response.json();
-                const messages = data.messages || data.response || [];
-                messages.forEach(msg => {
-                    if (msg.messageType) {
-                        msg.messageType = normalizeMessageType(msg.messageType);
-                    }
-                });
-
-                if (data.messages) data.messages = messages;
-                if (data.response) data.response = messages;
-
-                return data;
-            } catch (error: any) {
-                console.error("fetchMessagesForOffice error:", error);
-                return { response: [], count: 0, status: 500, error: error.message };
-            }
-        }
     }
+}
+
+export async function fetchMessagesForOffice(officeId: string, chatId: string, limit: number = 50): Promise<UazapiResponse<UazapiMessage>> {
+    try {
+        const { token, url } = await getCredentialsForOffice(officeId);
+        const endpoint = `${url}/message/find`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chatid: chatId,
+                limit: limit,
+                sort: "-messageTimestamp"
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data: UazapiResponse<UazapiMessage> = await response.json();
+        const messages = data.messages || data.response || [];
+        messages.forEach(msg => {
+            if (msg.messageType) {
+                msg.messageType = normalizeMessageType(msg.messageType);
+            }
+        });
+
+        if (data.messages) data.messages = messages;
+        if (data.response) data.response = messages;
+
+        return data;
+    } catch (error: any) {
+        console.error("fetchMessagesForOffice error:", error);
+        return { response: [], count: 0, status: 500, error: error.message };
+    }
+
+}
+
+export async function getLeadDetailsForOffice(officeId: string, phone: string) {
+    try {
+        const sanitizedPhone = phone.replace(/\D/g, '');
+        const supabase = createClient();
+
+        // Try to find the lead
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .select('*')
+            .eq('ID_empresa', officeId)
+            .eq('telefone', sanitizedPhone)
+            .maybeSingle();
+
+        if (error) {
+            console.error("getLeadDetailsForOffice error:", error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error("getLeadDetailsForOffice exception:", error);
+        return null;
+    }
+}
+
+export async function sendMessageForOffice(officeId: string, chatId: string, text: string) {
+    try {
+        const { token, url } = await getCredentialsForOffice(officeId);
+        const endpoint = `${url}/send/text`;
+        const number = chatId.includes('@') ? chatId.split('@')[0] : chatId;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                number: number,
+                text: text,
+                delay: 1200
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`sendMessageForOffice API Error: ${response.status} - ${errorBody}`);
+            throw new Error(`Falha ao enviar mensagem: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("sendMessageForOffice error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteMessageForOffice(officeId: string, chatId: string, messageId: string) {
+    try {
+        const { token, url } = await getCredentialsForOffice(officeId);
+        const endpoint = `${url}/message/delete`;
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'token': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: messageId
+            }),
+            next: { revalidate: 0 }
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`deleteMessageForOffice API Error: ${response.status} - ${errorBody}`);
+            throw new Error(`Falha ao deletar mensagem: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("deleteMessageForOffice error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function toggleLeadAIForOffice(officeId: string, phone: string, isEnabled: boolean) {
+    try {
+        const sanitizedPhone = phone.replace(/\D/g, '');
+        const supabase = createClient();
+
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .update({ 'IA_responde': isEnabled })
+            .eq('ID_empresa', officeId)
+            .eq('telefone', sanitizedPhone)
+            .select();
+
+        if (error) {
+            console.error("toggleLeadAIForOffice error:", error);
+            throw new Error(`Falha ao atualizar IA: ${error.message}`);
+        }
+
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("toggleLeadAIForOffice exception:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateLeadStatusForOffice(officeId: string, phone: string, newStatus: string) {
+    try {
+        const sanitizedPhone = phone.replace(/\D/g, '');
+        const supabase = createClient();
+
+        const { data, error } = await supabase
+            .from('Todos os clientes')
+            .update({ 'Status': newStatus })
+            .eq('ID_empresa', officeId)
+            .eq('telefone', sanitizedPhone)
+            .select();
+
+        if (error) {
+            console.error("updateLeadStatusForOffice error:", error);
+            throw new Error(`Falha ao atualizar Status: ${error.message}`);
+        }
+
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("updateLeadStatusForOffice exception:", error);
+        return { success: false, error: error.message };
+    }
+}
+

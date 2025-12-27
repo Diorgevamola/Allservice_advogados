@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { FunnelChart } from "@/components/dashboard/FunnelChart";
 import { StepConversionChart } from "@/components/dashboard/StepConversionChart";
+import { StatusDistributionChart } from "@/components/dashboard/StatusDistributionChart";
 import { LeadsOverTimeChart } from '@/components/dashboard/LeadsOverTimeChart';
 import { fetchDashboardData, getAvailableScripts, TimeRange, DashboardStats } from "@/lib/api";
 import { startOfDay, endOfDay, subDays } from 'date-fns';
@@ -105,18 +106,9 @@ export default function DashboardPage() {
   // So we pass the same calculated start/end.
 
   const getChartDates = () => {
-    let start: string | undefined;
-    let end: string | undefined;
-
-    if (dateRange?.from) {
-      start = startOfDay(dateRange.from).toISOString();
-    }
-    if (dateRange?.to) {
-      end = endOfDay(dateRange.to).toISOString();
-    }
-    if (start && !end) {
-      end = endOfDay(dateRange!.from!).toISOString();
-    }
+    // Return fixed 90 days range regardless of selection
+    const end = endOfDay(new Date()).toISOString();
+    const start = startOfDay(subDays(new Date(), 90)).toISOString();
     return { start, end };
   };
 
@@ -156,16 +148,23 @@ export default function DashboardPage() {
           <StatsCards stats={data} />
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7">
             <div className="col-span-1 md:col-span-2 lg:col-span-4">
-              <LeadsOverTimeChart startDate={chartStart} endDate={chartEnd} />
+              <LeadsOverTimeChart
+                startDate={startOfDay(subDays(new Date(), 90)).toISOString()}
+                endDate={endOfDay(new Date()).toISOString()}
+              />
             </div>
             <div className="col-span-1 md:col-span-2 lg:col-span-3">
               <FunnelChart data={data.funnel} />
             </div>
           </div>
 
+
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7">
-            <div className="col-span-1 md:col-span-2 lg:col-span-7">
+            <div className="col-span-1 md:col-span-2 lg:col-span-4">
               <StepConversionChart data={data.stepConversion} />
+            </div>
+            <div className="col-span-1 md:col-span-2 lg:col-span-3">
+              <StatusDistributionChart data={data} />
             </div>
           </div>
         </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLeads } from "./actions";
+import { getLeads, exportLeadsToCsv } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { getAvailableScripts } from "@/lib/api";
 import {
     Table,
@@ -92,6 +94,46 @@ export default function LeadsPage() {
         loadLeads();
     }, [dateRange, selectedArea, limit, selectedStatus]);
 
+    const handleExport = async () => {
+        toast.promise(
+            async () => {
+                let startDate: string | undefined;
+                let endDate: string | undefined;
+
+                if (dateRange?.from) {
+                    startDate = startOfDay(dateRange.from).toISOString();
+                }
+                if (dateRange?.to) {
+                    endDate = endOfDay(dateRange.to).toISOString();
+                }
+                if (startDate && !endDate) {
+                    endDate = endOfDay(dateRange!.from!).toISOString();
+                }
+
+                const csvData = await exportLeadsToCsv(startDate, endDate, selectedArea, 0, selectedStatus);
+
+                if (!csvData) {
+                    throw new Error("Nenhum dado para exportar.");
+                }
+
+                // Create blob and download
+                const blob = new Blob(["\uFEFF" + csvData], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `leads_export_${format(new Date(), "dd-MM-yyyy_HH-mm")}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+            },
+            {
+                loading: 'Gerando CSV...',
+                success: 'Exportação concluída!',
+                error: 'Erro ao exportar dados'
+            }
+        );
+    };
+
     const getStatusBadge = (status: string) => {
         const s = status?.trim() || "Desconhecido";
 
@@ -149,8 +191,12 @@ export default function LeadsPage() {
                             </SelectContent>
                         </Select>
                     </div>
-
                     <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+
+                    <Button variant="outline" size="sm" onClick={handleExport} title="Exportar para CSV">
+                        <Download className="mr-2 h-4 w-4" />
+                        Exportar CSV
+                    </Button>
 
                     <Badge variant="outline" className="text-base px-4 py-1 h-9 flex items-center">
                         Total: {totalLeads}

@@ -42,6 +42,11 @@ const sidebarItems = [
         href: "/perfil",
         icon: User,
     },
+    {
+        title: "Conexão",
+        href: "/conexao",
+        icon: Wifi,
+    },
 ];
 
 interface SidebarProps {

@@ -16,7 +16,7 @@ export default async function KanbanPage() {
             <DashboardHeader />
 
             <main className="flex-1 overflow-x-auto">
-                <Suspense fallback={<div className="text-white">Carregando painel...</div>}>
+                <Suspense fallback={<div className="text-muted-foreground animate-pulse">Carregando painel...</div>}>
                     <KanbanClient initialLeads={leads} />
                 </Suspense>
             </main>

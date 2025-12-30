@@ -76,7 +76,7 @@ export async function initWhatsAppInstance() {
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
-                'token': profile.token_uazapi, // Changed from admintoken to token
+                'admintoken': process.env.UAZAPI_ADMIN_TOKEN || profile.token_uazapi, // Switch to admintoken header
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

@@ -29,23 +29,23 @@ export interface StatusDistributionProps {
 export function StatusDistributionChart({ data }: StatusDistributionProps) {
 
     const chartData = React.useMemo(() => [
-        { name: "qualified", value: data.qualified, fill: "#4ade80", label: "Concluído" }, // Green-400
-        { name: "inProgress", value: data.inProgress, fill: "#facc15", label: "Em Andamento" }, // Yellow-400
-        { name: "disqualified", value: data.disqualified, fill: "#f87171", label: "Desqualificado" }, // Red-400
+        { name: "qualified", value: data.qualified, fill: "#22c55e", label: "Concluído" }, // Green
+        { name: "inProgress", value: data.inProgress, fill: "#eab308", label: "Em Andamento" }, // Yellow
+        { name: "disqualified", value: data.disqualified, fill: "#ef4444", label: "Desqualificado" }, // Red
     ], [data]);
 
     const chartConfig = {
         qualified: {
             label: "Concluído",
-            color: "#4ade80",
+            color: "#22c55e",
         },
         inProgress: {
             label: "Em Andamento",
-            color: "#facc15",
+            color: "#eab308",
         },
         disqualified: {
             label: "Desqualificado",
-            color: "#f87171",
+            color: "#ef4444",
         }
     } satisfies ChartConfig
 

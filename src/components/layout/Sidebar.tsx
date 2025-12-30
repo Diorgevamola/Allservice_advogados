@@ -84,7 +84,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
         <motion.div
             initial={{ width: 240 }}
             animate={{ width: collapsed ? 100 : 280 }}
-            className="relative flex h-screen flex-col border-r border-white/5 bg-black/60 backdrop-blur-xl text-zinc-100 transition-all duration-300"
+            className="relative flex h-screen flex-col border-r border-border bg-sidebar backdrop-blur-xl text-sidebar-foreground transition-all duration-300"
         >
             <div className="flex h-16 items-center justify-between px-4">
                 {!collapsed && (
@@ -129,8 +129,8 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
                             href={item.href}
                             onClick={handleNavClick}
                             className={cn(
-                                "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-light tracking-wide transition-all hover:bg-white/5 hover:text-white",
-                                isActive ? "bg-white/5 text-white shadow-[0_0_20px_rgba(255,255,255,0.02)] border border-white/5" : "text-zinc-400",
+                                "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-light tracking-wide transition-all hover:bg-accent hover:text-accent-foreground",
+                                isActive ? "bg-accent text-accent-foreground shadow-sm border border-border" : "text-muted-foreground",
                                 collapsed && "justify-center px-2"
                             )}
                         >

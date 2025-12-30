@@ -63,7 +63,7 @@ export function StepConversionChart({ data }: StepConversionChartProps) {
                                 {data.map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={entry.percentage > 70 ? 'hsl(170, 100%, 50%)' : entry.percentage > 40 ? 'hsl(40, 100%, 50%)' : 'hsl(0, 100%, 60%)'}
+                                        fill={entry.percentage > 70 ? '#22c55e' : entry.percentage > 40 ? '#eab308' : '#ef4444'}
                                         fillOpacity={0.8}
                                     />
                                 ))}

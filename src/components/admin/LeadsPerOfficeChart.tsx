@@ -28,11 +28,11 @@ interface LeadsPerOfficeChartProps {
 export function LeadsPerOfficeChart({ data }: LeadsPerOfficeChartProps) {
     // Use a set of predefined colors for the segments
     const COLORS = [
-        "hsl(var(--chart-1))",
-        "hsl(var(--chart-2))",
-        "hsl(var(--chart-3))",
-        "hsl(var(--chart-4))",
-        "hsl(var(--chart-5))",
+        "var(--chart-1)",
+        "var(--chart-2)",
+        "var(--chart-3)",
+        "var(--chart-4)",
+        "var(--chart-5)",
         "#FF6B6B",
         "#4ECDC4",
         "#45B7D1",

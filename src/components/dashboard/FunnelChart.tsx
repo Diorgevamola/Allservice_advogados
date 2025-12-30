@@ -25,12 +25,7 @@ export function FunnelChart({ data }: FunnelChartProps) {
                 <div className="h-[350px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={data}>
-                            <defs>
-                                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="hsl(190, 100%, 50%)" stopOpacity={1} />
-                                    <stop offset="100%" stopColor="hsl(270, 100%, 60%)" stopOpacity={1} />
-                                </linearGradient>
-                            </defs>
+                            {/* Gradient removed per user request for solid color */}
                             <XAxis
                                 dataKey="question"
                                 stroke="#888888"
@@ -57,7 +52,7 @@ export function FunnelChart({ data }: FunnelChartProps) {
                             />
                             <Bar
                                 dataKey="count"
-                                fill="url(#barGradient)"
+                                fill="var(--chart-1)" // Solid Purple
                                 radius={[4, 4, 0, 0]}
                                 name="Respostas"
                             />

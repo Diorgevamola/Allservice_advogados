@@ -21,6 +21,11 @@ import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { exportDashboardMetricsToCsv } from './actions';
+import { toast } from "sonner";
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -31,6 +36,45 @@ export default function DashboardPage() {
   const [scripts, setScripts] = useState<string[]>([]);
   const [data, setData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleExport = async () => {
+    toast.promise(
+      async () => {
+        let start: string | undefined;
+        let end: string | undefined;
+
+        if (dateRange?.from) {
+          start = startOfDay(dateRange.from).toISOString();
+        }
+        if (dateRange?.to) {
+          end = endOfDay(dateRange.to).toISOString();
+        }
+        if (start && !end) {
+          end = endOfDay(dateRange!.from!).toISOString();
+        }
+
+        const csvData = await exportDashboardMetricsToCsv(start, end, selectedArea);
+
+        if (!csvData) {
+          throw new Error("Nenhum dado para exportar.");
+        }
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `metricas_dashboard_${format(new Date(), "dd-MM-yyyy")}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      },
+      {
+        loading: 'Gerando relatório...',
+        success: 'Relatório exportado!',
+        error: 'Erro ao exportar dados'
+      }
+    );
+  };
 
   useEffect(() => {
     async function fetchScripts() {
@@ -115,7 +159,7 @@ export default function DashboardPage() {
   const { start: chartStart, end: chartEnd } = getChartDates();
 
   return (
-    <div className="flex-1 space-y-4">
+    <div className="flex-1 space-y-4 pt-6">
       <DashboardHeader>
         <div className="flex flex-wrap items-center gap-3 md:gap-6">
           <div className="flex items-center gap-2">
@@ -136,6 +180,10 @@ export default function DashboardPage() {
           </div>
 
           <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          <Button variant="outline" size="sm" onClick={handleExport} title="Exportar métricas para CSV">
+            <Download className="mr-2 h-4 w-4" />
+            Exportar CSV
+          </Button>
         </div>
       </DashboardHeader>
 

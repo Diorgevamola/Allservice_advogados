@@ -99,3 +99,32 @@ export async function getLeadsOverTimeData(startDateStr?: string, endDateStr?: s
 
     return Array.from(dailyMap.values());
 }
+
+export async function exportDashboardMetricsToCsv(startDate?: string, endDate?: string, area?: string) {
+    const { fetchDashboardData } = await import("@/lib/api");
+    const stats = await fetchDashboardData(startDate, endDate, area);
+
+    if (!stats) return null;
+
+    let csvContent = "\uFEFF"; // UTF-8 BOM
+    csvContent += "Métrica,Quantidade,Nota\n";
+    csvContent += `Total de Leads,${stats.total},\n`;
+    csvContent += `Leads Qualificados,${stats.qualified},\n`;
+    csvContent += `Em Andamento,${stats.inProgress},\n`;
+    csvContent += `Desqualificados,${stats.disqualified},\n`;
+    
+    const conversionRate = stats.total > 0 ? ((stats.qualified / stats.total) * 100).toFixed(1) : "0";
+    csvContent += `Taxa de Conversão,${conversionRate}%,\n\n`;
+
+    csvContent += "Etapa do Funil,Quantidade,Conversão (%)\n";
+    stats.funnel.forEach(item => {
+        csvContent += `${item.question},${item.count},${item.percentage}%\n`;
+    });
+
+    csvContent += "\nConversão por Etapa,Quantidade,Anterior,Taxa (%)\n";
+    stats.stepConversion.forEach(item => {
+        csvContent += `${item.question},${item.count},${item.previousCount},${item.percentage}%\n`;
+    });
+
+    return csvContent;
+}

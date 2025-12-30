@@ -97,14 +97,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
 
     return (
         <div
-            style={{
-                width: "100%",
-                backgroundColor: "#09090b", // zinc-950
-                borderRadius: "16px",
-                padding: "32px",
-                fontFamily: "system-ui, -apple-system, sans-mono",
-                border: "1px solid #27272a", // zinc-800
-            }}
+            className="w-full bg-card/50 backdrop-blur-sm rounded-2xl p-8 border border-border" // Replaced inline styles
         >
             <style jsx>{`
         @keyframes pulse {
@@ -126,52 +119,35 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
 
             <div style={{ maxWidth: "100%", margin: "0 auto" }}>
                 <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "24px",
-                        flexWrap: "wrap",
-                        gap: "10px"
-                    }}
+                    className="flex justify-between items-center mb-6 flex-wrap gap-2"
                 >
                     <div>
-                        <h2 className="text-2xl font-light text-white mb-1">
+                        <h2 className="text-2xl font-light text-foreground mb-1">
                             Evolução de Leads
                         </h2>
-                        <p className="text-sm text-zinc-400">Desempenho no período selecionado</p>
+                        <p className="text-sm text-muted-foreground">Desempenho no período selecionado</p>
                     </div>
 
                     <div className="flex gap-4 flex-wrap">
 
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span className="text-sm text-zinc-400">Concluído</span>
+                            <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                            <span className="text-sm text-muted-foreground">Concluído</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                            <span className="text-sm text-zinc-400">Em andamento</span>
+                            <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+                            <span className="text-sm text-muted-foreground">Em andamento</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                            <span className="text-sm text-zinc-400">Desqualificado</span>
+                            <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                            <span className="text-sm text-muted-foreground">Desqualificado</span>
                         </div>
                     </div>
                 </div>
 
                 <div
                     ref={containerRef}
-                    style={{
-                        backgroundColor: "#18181b", // zinc-900
-                        borderRadius: "16px",
-                        padding: "24px",
-                        position: "relative",
-                        border: "1px solid #27272a",
-                        height: "350px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                    }}
+                    className="bg-muted/20 rounded-2xl p-6 relative border border-border h-[350px] flex items-center justify-center"
                 >
                     {data.length === 0 ? (
                         <div className="text-zinc-500">Carregando dados...</div>
@@ -233,7 +209,6 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
 
                             {/* Draw Lines */}
 
-                            {/* Concluido - Green */}
                             <path
                                 className="flowing-line"
                                 d={getPath('concluido')}
@@ -242,7 +217,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                                 strokeWidth="3"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                filter="drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))"
+                                filter="drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))" // Green glow
                             />
                             {/* Em andamento - Yellow */}
                             <path
@@ -253,7 +228,7 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                                 strokeWidth="3"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeDasharray="4 4" // Dashed for difference
+                                strokeDasharray="4 4" // Dashed
                             />
                             {/* Desqualificado - Red */}
                             <path
@@ -315,13 +290,13 @@ export function LeadsOverTimeChart({ startDate, endDate }: { startDate?: string,
                                 <span className="text-indigo-400">Total:</span>
                                 <span className="text-right text-white font-mono">{hoveredPoint.total}</span>
 
-                                <span className="text-green-400">Concluído:</span>
+                                <span className="text-[#22c55e]">Concluído:</span>
                                 <span className="text-right text-white font-mono">{hoveredPoint.concluido}</span>
 
-                                <span className="text-yellow-400">Em andamento:</span>
+                                <span className="text-[#eab308]">Em andamento:</span>
                                 <span className="text-right text-white font-mono">{hoveredPoint.em_andamento}</span>
 
-                                <span className="text-red-400">Desqualif.:</span>
+                                <span className="text-[#ef4444]">Desqualif.:</span>
                                 <span className="text-right text-white font-mono">{hoveredPoint.desqualificado}</span>
                             </div>
                         </div>

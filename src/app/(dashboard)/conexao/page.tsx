@@ -21,8 +21,9 @@ export default function ConexaoPage() {
         try {
             const res = await getWhatsAppStatus()
             if (res.state) {
-                setStatus(res.state)
-                if (res.state === "open") {
+                const normalizedState = res.state.toLowerCase() === "connected" ? "open" : res.state;
+                setStatus(normalizedState)
+                if (normalizedState === "open") {
                     setQrCode(null)
                     setIsConnecting(false)
                 }
@@ -38,7 +39,8 @@ export default function ConexaoPage() {
     useEffect(() => {
         fetchStatus()
         const interval = setInterval(() => {
-            if (status !== "open" || qrCode) {
+            const normalizedStatus = status.toLowerCase() === "connected" ? "open" : status;
+            if (normalizedStatus !== "open" || qrCode) {
                 fetchStatus()
             }
         }, 10000)

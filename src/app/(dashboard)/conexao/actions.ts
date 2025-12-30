@@ -31,13 +31,20 @@ export async function getWhatsAppStatus() {
 
         const data = await response.json();
 
-        // Handle Uazapi response format
+        // Handle Uazapi response format (matching perfil/actions.ts)
         let state = 'unknown';
         if (data?.instance?.state) {
             state = data.instance.state; // "open" | "connecting" | "close"
+        } else if (data?.status?.connected === true) {
+            state = 'open';
+        } else if (data?.status?.connected === false) {
+            state = 'close';
         } else if (data?.state) {
             state = data.state;
         }
+
+        // Standardize "connected" to "open" for frontend consistency if needed
+        if (state.toLowerCase() === 'connected') state = 'open';
 
         return {
             state,

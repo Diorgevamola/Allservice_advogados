@@ -867,6 +867,21 @@ function ChatsContent() {
                                         </div>
                                     </div>
 
+                                    {/* Action Buttons */}
+                                    <div className="pt-2">
+                                        <button
+                                            className="w-full flex items-center justify-center gap-2 p-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors text-xs font-medium disabled:opacity-50"
+                                            onClick={handleResendMessages}
+                                            disabled={isResending || messages.length === 0}
+                                        >
+                                            {isResending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SendHorizonal className="h-3.5 w-3.5" />}
+                                            Reenviar Últimas Mensagens
+                                        </button>
+                                        <p className="text-[10px] text-muted-foreground text-center mt-1.5 opacity-70">
+                                            Envia as últimas mensagens do cliente para o n8n/IA.
+                                        </p>
+                                    </div>
+
                                     {leadDetails['resumo da conversa'] && (
                                         <div>
                                             <h3 className="text-xs font-medium uppercase text-muted-foreground mb-2">Resumo</h3>

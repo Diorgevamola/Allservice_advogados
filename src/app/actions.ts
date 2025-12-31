@@ -57,7 +57,9 @@ export async function loginAction(formData: FormData) {
             .single();
 
         if (error || !data) {
-            return { error: 'Telefone não encontrado' };
+            console.error("Login error:", error);
+            const debugInfo = error ? ` (DB Error: ${error.code} - ${error.message})` : '';
+            return { error: `Telefone não encontrado: "${identifier}"${debugInfo}` };
         }
 
         (await cookies()).set('session', data.id.toString(), {

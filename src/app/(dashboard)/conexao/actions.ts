@@ -153,6 +153,9 @@ export async function connectWhatsAppInstance() {
 
         if (typeof data === 'string') {
             qrBase64 = data;
+        } else if (data.instance?.qrcode) {
+            // Uazapi format: { instance: { qrcode: "data:image/png;base64,..." } }
+            qrBase64 = data.instance.qrcode;
         } else if (data.base64) {
             qrBase64 = data.base64;
         } else if (data.qrcode) {

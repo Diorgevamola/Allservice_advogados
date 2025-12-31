@@ -9,7 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import {
     Search,
     MessageSquare,
@@ -670,89 +671,116 @@ function ChatsContent() {
                                     {loadingMessages ? (
                                         <div className="text-center text-muted-foreground mt-10">Carregando mensagens...</div>
                                     ) : (
-                                        messages.map(msg => (
-                                            <div
-                                                key={msg.id}
-                                                className={`max-w-[70%] p-3 rounded-2xl text-sm relative group ${msg.fromMe
-                                                    ? 'bg-primary/20 text-foreground self-end rounded-br-none'
-                                                    : 'bg-muted text-foreground self-start rounded-bl-none'
-                                                    } ${msg.status === 'Deleted' ? 'opacity-60 italic' : ''}`}
-                                            >
-                                                {msg.fromMe && msg.status !== 'Deleted' && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <button
-                                                                className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-destructive hover:bg-destructive/10 rounded-full transition-all"
-                                                                title="Apagar para todos"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Apagar mensagem?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Esta ação apagará a mensagem para todos os participantes da conversa.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={() => handleDeleteMessage(msg.id || msg.messageid)}
-                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                >
-                                                                    Apagar para todos
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                                <div className="flex flex-col gap-1">
-                                                    {['audio', 'ptt', 'voice'].includes(msg.messageType) ? (
-                                                        msg.fileURL ? (
-                                                            <audio controls src={msg.fileURL} className="max-w-[240px]" />
-                                                        ) : (
-                                                            <span className="italic opacity-70">🎙️ Áudio indisponível</span>
-                                                        )
-                                                    ) : msg.messageType === 'image' ? (
-                                                        msg.fileURL ? (
-                                                            <img src={msg.fileURL} alt="Imagem" className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90" onClick={() => window.open(msg.fileURL, '_blank')} />
-                                                        ) : (
-                                                            <span className="italic opacity-70">📷 Foto indisponível</span>
-                                                        )
-                                                    ) : msg.messageType === 'video' ? (
-                                                        msg.fileURL ? (
-                                                            <video controls src={msg.fileURL} className="max-w-[240px] rounded-lg" />
-                                                        ) : (
-                                                            <span className="italic opacity-70">🎥 Vídeo indisponível</span>
-                                                        )
-                                                    ) : msg.messageType === 'document' ? (
-                                                        msg.fileURL ? (
-                                                            <a href={msg.fileURL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline">
-                                                                📄 Documento
-                                                            </a>
-                                                        ) : (
-                                                            <span className="italic opacity-70">📄 Documento indisponível</span>
-                                                        )
-                                                    ) : msg.status === 'Deleted' ? (
-                                                        <p className="flex items-center gap-1.5 opacity-70">
-                                                            <Trash2 className="h-3 w-3" />
-                                                            Mensagem apagada
-                                                        </p>
-                                                    ) : (
-                                                        <p>{msg.text}</p>
-                                                    )}
+                                        (() => {
+                                            let lastDateLabel = '';
+                                            return messages.map((msg, index) => {
+                                                const msgDate = new Date(msg.messageTimestamp);
+                                                let currentDateLabel = '';
 
-                                                    {/* Caption */}
-                                                    {(msg.messageType === 'image' || msg.messageType === 'video') && msg.text && msg.text !== 'image' && msg.text !== 'video' && (
-                                                        <p className="mt-1">{msg.text}</p>
-                                                    )}
-                                                </div>
-                                                <span className="text-[10px] opacity-70 block text-right mt-1">
-                                                    {format(new Date(msg.messageTimestamp), 'HH:mm')}
-                                                </span>
-                                            </div>
-                                        ))
+                                                if (isToday(msgDate)) currentDateLabel = 'Hoje';
+                                                else if (isYesterday(msgDate)) currentDateLabel = 'Ontem';
+                                                else currentDateLabel = format(msgDate, "dd 'de' MMMM", { locale: ptBR });
+
+                                                const showSeparator = currentDateLabel !== lastDateLabel;
+                                                lastDateLabel = currentDateLabel;
+
+                                                return (
+                                                    <div key={msg.id || msg.messageid || index} className="flex flex-col">
+                                                        {showSeparator && (
+                                                            <div className="flex items-center justify-center my-8 first:mt-2">
+                                                                <div className="flex items-center gap-3 w-full max-w-sm">
+                                                                    <div className="h-px bg-border/40 flex-1" />
+                                                                    <span className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-background/50 backdrop-blur-sm rounded-full border border-border/20 shadow-sm">
+                                                                        {currentDateLabel}
+                                                                    </span>
+                                                                    <div className="h-px bg-border/40 flex-1" />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div
+                                                            className={`max-w-[70%] p-3 rounded-2xl text-sm relative group mb-4 last:mb-0 ${msg.fromMe
+                                                                ? 'bg-primary/20 text-foreground self-end rounded-br-none ml-auto'
+                                                                : 'bg-muted text-foreground self-start rounded-bl-none mr-auto'
+                                                                } ${msg.status === 'Deleted' ? 'opacity-60 italic' : ''}`}
+                                                        >
+                                                            {msg.fromMe && msg.status !== 'Deleted' && (
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <button
+                                                                            className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-destructive hover:bg-destructive/10 rounded-full transition-all"
+                                                                            title="Apagar para todos"
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Apagar mensagem?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Esta ação apagará a mensagem para todos os participantes da conversa.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                            <AlertDialogAction
+                                                                                onClick={() => handleDeleteMessage(msg.id || msg.messageid)}
+                                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                            >
+                                                                                Apagar para todos
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            )}
+                                                            <div className="flex flex-col gap-1">
+                                                                {['audio', 'ptt', 'voice'].includes(msg.messageType) ? (
+                                                                    msg.fileURL ? (
+                                                                        <audio controls src={msg.fileURL} className="max-w-[240px]" />
+                                                                    ) : (
+                                                                        <span className="italic opacity-70">🎙️ Áudio indisponível</span>
+                                                                    )
+                                                                ) : msg.messageType === 'image' ? (
+                                                                    msg.fileURL ? (
+                                                                        <img src={msg.fileURL} alt="Imagem" className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90" onClick={() => window.open(msg.fileURL, '_blank')} />
+                                                                    ) : (
+                                                                        <span className="italic opacity-70">📷 Foto indisponível</span>
+                                                                    )
+                                                                ) : msg.messageType === 'video' ? (
+                                                                    msg.fileURL ? (
+                                                                        <video controls src={msg.fileURL} className="max-w-[240px] rounded-lg" />
+                                                                    ) : (
+                                                                        <span className="italic opacity-70">🎥 Vídeo indisponível</span>
+                                                                    )
+                                                                ) : msg.messageType === 'document' ? (
+                                                                    msg.fileURL ? (
+                                                                        <a href={msg.fileURL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline">
+                                                                            📄 Documento
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span className="italic opacity-70">📄 Documento indisponível</span>
+                                                                    )
+                                                                ) : msg.status === 'Deleted' ? (
+                                                                    <p className="flex items-center gap-1.5 opacity-70">
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                        Mensagem apagada
+                                                                    </p>
+                                                                ) : (
+                                                                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                                                                )}
+
+                                                                {/* Caption */}
+                                                                {(msg.messageType === 'image' || msg.messageType === 'video') && msg.text && msg.text !== 'image' && msg.text !== 'video' && (
+                                                                    <p className="mt-1">{msg.text}</p>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-[10px] opacity-70 block text-right mt-1 font-medium">
+                                                                {format(new Date(msg.messageTimestamp), 'HH:mm')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            });
+                                        })()
                                     )}
                                 </div>
                             </ScrollArea>

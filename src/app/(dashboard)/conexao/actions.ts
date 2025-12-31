@@ -122,7 +122,7 @@ export async function connectWhatsAppInstance() {
         const profile = await getUserProfile();
 
         if (!profile.token_uazapi) {
-            return { error: "URL e Token da Uazapi ausentes. Complete seu Perfil primeiro." };
+            return { error: "Token da Uazapi ausente. Complete seu Perfil primeiro." };
         }
 
         const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
@@ -139,8 +139,6 @@ export async function connectWhatsAppInstance() {
                 'token': profile.token_uazapi,
                 'Content-Type': 'application/json'
             },
-            // Optional: specify phone if needed for pairing code, 
-            // but usually we want QR code first for a fresh connect.
             body: JSON.stringify({})
         });
 
@@ -150,8 +148,23 @@ export async function connectWhatsAppInstance() {
             return { error: data.message || `Erro ao conectar: ${response.status}` };
         }
 
-        // data often contains { base64: "...", qrcode: "..." }
-        return { success: true, data };
+        // Handle different response formats from Uazapi
+        let qrBase64 = null;
+
+        if (typeof data === 'string') {
+            qrBase64 = data;
+        } else if (data.base64) {
+            qrBase64 = data.base64;
+        } else if (data.qrcode) {
+            qrBase64 = typeof data.qrcode === 'string' ? data.qrcode : data.qrcode.base64;
+        }
+
+        if (!qrBase64) {
+            console.error('Unexpected API response:', data);
+            return { error: 'Formato de resposta inesperado. Verifique os logs.' };
+        }
+
+        return { success: true, data: { base64: qrBase64 } };
 
     } catch (error: any) {
         console.error("connectWhatsAppInstance exception:", error);

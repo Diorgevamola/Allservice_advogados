@@ -1,8 +1,27 @@
 'use client';
 
 import { useState } from "react";
-import { MobileHeader } from "@/components/layout/Sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { Menu, Button } from "lucide-react"; // Note: Button is likely a component, checking imports
+import { cn } from "@/lib/utils";
+
+// Simple internal MobileHeader since the main one was removed/refactored
+function MobileHeader({ onMenuClick, officeName }: { onMenuClick: () => void; officeName: string }) {
+    return (
+        <div className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-black/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
+            <button
+                onClick={onMenuClick}
+                className="text-zinc-400 hover:text-white p-2"
+            >
+                <Menu className="h-6 w-6" />
+            </button>
+            <span className="text-sm font-light bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                {officeName}
+            </span>
+            <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+    );
+}
 
 export function AdminMobileWrapper({ children }: { children: React.ReactNode }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

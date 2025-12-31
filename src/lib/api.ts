@@ -34,38 +34,114 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         return { qualified: 0, inProgress: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
     }
 
-    // Fetch 'Todos os clientes' based on created_at AND ID_empresa
-    let query = supabase
-        .from('Todos os clientes')
-        .select('*')
-        .eq('ID_empresa', userId);
+    // Common filter function
+    const applyAreaFilter = (q: any) => {
+        if (area && area !== 'all') {
+            return q.eq('area', area);
+        }
+        return q;
+    };
 
-    if (startDate && endDate) {
-        query = query.gte(dateColumn, startDate).lte(dateColumn, endDate);
-    } else if (startDate) {
-        query = query.gte(dateColumn, startDate);
+    let leads: any[] = [];
+    let totalLeadsCount = 0;
+
+    if (dateColumn === 'created_at') {
+        // --- STANDARD MODE (Total) ---
+        // Single query based on created_at for everything
+        let query = supabase
+            .from('Todos os clientes')
+            .select('*')
+            .eq('ID_empresa', userId);
+
+        query = applyAreaFilter(query);
+
+        if (startDate && endDate) {
+            query = query.gte('created_at', startDate).lte('created_at', endDate);
+        } else if (startDate) {
+            query = query.gte('created_at', startDate);
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            console.error('Error fetching data (created_at):', error);
+            return { qualified: 0, inProgress: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
+        }
+        leads = data || [];
+        totalLeadsCount = leads.length;
+
+    } else {
+        // --- DIÁRIO MODE (Conversion) ---
+        // 1. Fetch Total Count (Always based on created_at as requested)
+        let totalQuery = supabase
+            .from('Todos os clientes')
+            .select('id', { count: 'exact', head: true }) // head: true for count only
+            .eq('ID_empresa', userId);
+
+        totalQuery = applyAreaFilter(totalQuery);
+
+        if (startDate && endDate) {
+            totalQuery = totalQuery.gte('created_at', startDate).lte('created_at', endDate);
+        }
+
+        const { count: totalCount, error: totalError } = await totalQuery;
+        if (!totalError) {
+            totalLeadsCount = totalCount || 0;
+        }
+
+        // 2. Fetch Active Data (Mixed Criteria)
+        // Part A: Qualified leads (based on qualificacao_data)
+        let qualifiedQuery = supabase
+            .from('Todos os clientes')
+            .select('*')
+            .eq('ID_empresa', userId)
+            .ilike('Status', 'Concluído'); // Case insensitive check just in case
+
+        qualifiedQuery = applyAreaFilter(qualifiedQuery);
+
+        if (startDate && endDate) {
+            qualifiedQuery = qualifiedQuery.gte('qualificacao_data', startDate).lte('qualificacao_data', endDate);
+        }
+
+        // Part B: Other leads (In Progress / Disqualified - based on last_message)
+        // We exclude 'Concluído' to avoid duplication if ranges overlap weirdly, though unlikely logic-wise
+        // Actually, safer to just query everything NOT Concluído matching last_message
+        let othersQuery = supabase
+            .from('Todos os clientes')
+            .select('*')
+            .eq('ID_empresa', userId)
+            .not('Status', 'ilike', 'Concluído');
+
+        othersQuery = applyAreaFilter(othersQuery);
+
+        if (startDate && endDate) {
+            othersQuery = othersQuery.gte('last_message', startDate).lte('last_message', endDate);
+        }
+
+        const [qualifiedRes, othersRes] = await Promise.all([qualifiedQuery, othersQuery]);
+
+        if (qualifiedRes.error) console.error("Error fetching qualified:", qualifiedRes.error);
+        if (othersRes.error) console.error("Error fetching others:", othersRes.error);
+
+        const qualifiedLeads = qualifiedRes.data || [];
+        const otherLeads = othersRes.data || [];
+
+        // Combine for metrics calculation
+        leads = [...qualifiedLeads, ...otherLeads];
     }
 
-    if (area && area !== 'all') {
-        query = query.eq('area', area);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-        console.error('Error fetching data:', error);
-        return { qualified: 0, inProgress: 0, total: 0, disqualified: 0, funnel: [], stepConversion: [] };
-    }
-
-    const leads = data || [];
-    const total = leads.length;
+    // --- METRICS CALCULATION (Shared Logic) ---
+    // Note: 'total' in the return object will be 'totalLeadsCount' (created_at based)
+    // BUT the funnel/conversion percentages usually rely on the "relevant total" for that context.
+    // User said: "interfere apenas nos cards de qualificados... taxa de conversão".
+    // If 'total' displayed on card is Created, but Conversion Rate = Qualified / Total... 
+    // If Total is Created Today (e.g. 10) and Qualified is Closed Today (e.g. 5), rate is 50%.
+    // This makes sense.
 
     let qualified = 0;
     let disqualified = 0;
     let inProgress = 0;
 
     leads.forEach((lead: any) => {
-        // Qualified logic: Status column is 'Concluído'
         const status = (lead.Status || '').toLowerCase();
 
         if (status === 'concluído' || status === 'concluido') {
@@ -73,12 +149,25 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         } else if (status === 'desqualificado') {
             disqualified++;
         } else {
-            // Everything else is considered In Progress (Em andamento, empty, null)
             inProgress++;
         }
     });
 
-    // Funnel Data
+    // Funnel Data (Based on the 'leads' set - i.e., Active/Closed today)
+    // The 'total' denominator for percentages inside funnel:
+    // Usually funnel % is step-based. 
+    // The 'total' field in DashboardStats is often used for the "Total Leads" card.
+    // However, the FunnelChart might use 'total' lead count of the *set* to calculate initial drop-off?
+    // Let's use leads.length (The Active Set) as the base for funnel percentages if we want to show "Of the leads active today, X% did Y".
+    // OR should we use 'totalLeadsCount' (Created)? 
+    // If we use Created, and we closed 100 leads today but created 0, percentage > 100%. Bad.
+    // So Funnel/Steps should be relative to the *fetched leads* (active/closed).
+
+    // BUT the return object has a single 'total' property used for the Card.
+    // We will return totalLeadsCount as 'total' for the Card.
+    // For Funnel calculation, we use 'leads.length' (the active set count).
+
+    const activeTotal = leads.length;
     const questions = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10', 't11', 't12'];
 
     const funnel = questions.map(q => {
@@ -86,14 +175,14 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         return {
             question: q.toUpperCase(),
             count,
-            total: total,
-            percentage: total > 0 ? Math.round((count / total) * 100) : 0
+            total: activeTotal,
+            percentage: activeTotal > 0 ? Math.round((count / activeTotal) * 100) : 0
         };
     });
 
     const stepConversion = questions.map((q, index) => {
         const count = leads.filter((l: any) => l[q] === true).length;
-        const previousCount = index === 0 ? total : leads.filter((l: any) => l[questions[index - 1]] === true).length;
+        const previousCount = index === 0 ? activeTotal : leads.filter((l: any) => l[questions[index - 1]] === true).length;
 
         return {
             question: q.toUpperCase(),
@@ -106,7 +195,7 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
     return {
         qualified,
         inProgress,
-        total,
+        total: totalLeadsCount, // Keeps the Created count for the Card
         disqualified,
         funnel,
         stepConversion

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Menu, Button } from "lucide-react"; // Note: Button is likely a component, checking imports
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Simple internal MobileHeader since the main one was removed/refactored

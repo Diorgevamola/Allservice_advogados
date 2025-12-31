@@ -70,65 +70,109 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         totalLeadsCount = leads.length;
 
     } else {
-        // --- DIÁRIO MODE (Conversion) ---
-        // 1. Fetch Total Count (Based on last_message as requested)
-        let totalQuery = supabase
+        // --- DIÁRIO MODE (Conversion/Activity Attribution) ---
+        // 1. Fetch leads by last_message (The primary activity ruler for Total, InProgress, Disqualified)
+        let msgQuery = supabase
             .from('Todos os clientes')
-            .select('id', { count: 'exact', head: true })
+            .select('*')
             .eq('ID_empresa', userId);
 
-        totalQuery = applyAreaFilter(totalQuery);
-
+        msgQuery = applyAreaFilter(msgQuery);
         if (startDate && endDate) {
-            totalQuery = totalQuery.gte('last_message', startDate).lte('last_message', endDate);
+            msgQuery = msgQuery.gte('last_message', startDate).lte('last_message', endDate);
         } else if (startDate) {
-            totalQuery = totalQuery.gte('last_message', startDate);
+            msgQuery = msgQuery.gte('last_message', startDate);
         }
 
-        const { count: totalCount, error: totalError } = await totalQuery;
-        if (!totalError) {
-            totalLeadsCount = totalCount || 0;
-        }
-
-        // 2. Fetch Active Data (Mixed Criteria)
-        // Part A: Qualified leads (based on qualificacao_data)
-        let qualifiedQuery = supabase
+        // 2. Fetch leads by qualificacao_data (The specific closing ruler for Qualified)
+        let qualQuery = supabase
             .from('Todos os clientes')
             .select('*')
             .eq('ID_empresa', userId)
-            .ilike('Status', 'Concluído'); // Case insensitive check just in case
+            .ilike('Status', 'Concluído');
 
-        qualifiedQuery = applyAreaFilter(qualifiedQuery);
-
+        qualQuery = applyAreaFilter(qualQuery);
         if (startDate && endDate) {
-            qualifiedQuery = qualifiedQuery.gte('qualificacao_data', startDate).lte('qualificacao_data', endDate);
+            qualQuery = qualQuery.gte('qualificacao_data', startDate).lte('qualificacao_data', endDate);
+        } else if (startDate) {
+            qualQuery = qualQuery.gte('qualificacao_data', startDate);
         }
 
-        // Part B: Other leads (In Progress / Disqualified - based on last_message)
-        // We exclude 'Concluído' to avoid duplication if ranges overlap weirdly, though unlikely logic-wise
-        // Actually, safer to just query everything NOT Concluído matching last_message
-        let othersQuery = supabase
-            .from('Todos os clientes')
-            .select('*')
-            .eq('ID_empresa', userId)
-            .not('Status', 'ilike', 'Concluído');
+        const [msgRes, qualRes] = await Promise.all([msgQuery, qualQuery]);
 
-        othersQuery = applyAreaFilter(othersQuery);
+        const messageLeads = msgRes.data || [];
+        const qualifiedLeads = qualRes.data || [];
 
-        if (startDate && endDate) {
-            othersQuery = othersQuery.gte('last_message', startDate).lte('last_message', endDate);
-        }
+        // --- UNIFYING THE SET ---
+        // To ensure consistency, the 'leads' array used for all charts and stats 
+        // will be the Union of leads that messaged OR were qualified today.
+        const leadsMap = new Map();
+        messageLeads.forEach(l => leadsMap.set(l.id, l));
+        qualifiedLeads.forEach(l => leadsMap.set(l.id, l));
 
-        const [qualifiedRes, othersRes] = await Promise.all([qualifiedQuery, othersQuery]);
+        leads = Array.from(leadsMap.values());
 
-        if (qualifiedRes.error) console.error("Error fetching qualified:", qualifiedRes.error);
-        if (othersRes.error) console.error("Error fetching others:", othersRes.error);
+        // --- CALCULATING COUNTS ---
+        // As per user request:
+        // Total leads and Disqualified/InProgress are governed by last_message.
+        // Qualified is governed by qualificacao_data.
 
-        const qualifiedLeads = qualifiedRes.data || [];
-        const otherLeads = othersRes.data || [];
+        // Note: We use the specific results from queries to ensure accuracy
+        const qualifiedCount = qualifiedLeads.length;
+        const totalByMessage = messageLeads.length;
 
-        // Combine for metrics calculation
-        leads = [...qualifiedLeads, ...otherLeads];
+        const inProgressCount = messageLeads.filter((l: any) => {
+            const status = (l.Status || '').toLowerCase();
+            return status !== 'concluído' && status !== 'concluido' && status !== 'desqualificado';
+        }).length;
+
+        const disqualifiedCount = messageLeads.filter((l: any) => {
+            const status = (l.Status || '').toLowerCase();
+            return status === 'desqualificado';
+        }).length;
+
+        // Final UI Consistency Check:
+        // If we Qualified 50 people but only 10 messaged, the "Total" needs to be at least 50 
+        // or the percentages will break. We use the larger of (Message count) or (Logical sum).
+        totalLeadsCount = Math.max(totalByMessage, (qualifiedCount + inProgressCount + disqualifiedCount));
+
+        // Let's set the variables for the shared calculation block
+        // Wait, the shared block below recalculates from the 'leads' array.
+        // I will return early here to ensure my specific calculations aren't overwritten.
+
+        const activeTotal = leads.length; // Use the UNION for funnel percentages
+        const questions = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10', 't11', 't12'];
+
+        const funnel = questions.map(q => {
+            const count = leads.filter((l: any) => l[q] === true).length;
+            return {
+                question: q.toUpperCase(),
+                count,
+                total: activeTotal,
+                percentage: activeTotal > 0 ? Math.round((count / activeTotal) * 100) : 0
+            };
+        });
+
+        const stepConversion = questions.map((q, index) => {
+            const count = leads.filter((l: any) => l[q] === true).length;
+            const previousCount = index === 0 ? activeTotal : leads.filter((l: any) => l[questions[index - 1]] === true).length;
+
+            return {
+                question: q.toUpperCase(),
+                count,
+                previousCount,
+                percentage: previousCount > 0 ? Math.round((count / previousCount) * 100) : 0
+            };
+        });
+
+        return {
+            qualified: qualifiedCount,
+            inProgress: inProgressCount,
+            total: totalLeadsCount,
+            disqualified: disqualifiedCount,
+            funnel,
+            stepConversion
+        };
     }
 
     // --- METRICS CALCULATION (Shared Logic) ---

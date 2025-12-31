@@ -54,6 +54,8 @@ export default function ConexaoPage() {
         setQrCode(null)
 
         try {
+            let activeToken: string | undefined = undefined;
+
             // 1. Check if we need to init (token is empty)
             if (status === "not_initialized") {
                 toast.info("Criando nova instância WhatsApp...")
@@ -76,6 +78,7 @@ export default function ConexaoPage() {
                         setIsConnecting(false)
                         return
                     }
+                    activeToken = initRes.token;
                     toast.success("Instância criada e token salvo!")
                 } else {
                     toast.error("Token não retornado pela API")
@@ -87,7 +90,7 @@ export default function ConexaoPage() {
             // 2. Connect to get QR Code
             toast.info("Gerando QR Code...")
             setProgress(60)
-            const connectRes = await connectWhatsAppInstance()
+            const connectRes = await connectWhatsAppInstance(activeToken)
             if (connectRes.error) {
                 toast.error("Erro ao gerar QR Code: " + connectRes.error)
             } else if (connectRes.data?.base64 || connectRes.data?.qrcode?.base64) {

@@ -117,11 +117,12 @@ export async function initWhatsAppInstance() {
     }
 }
 
-export async function connectWhatsAppInstance() {
+export async function connectWhatsAppInstance(tokenOverride?: string) {
     try {
         const profile = await getUserProfile();
+        const token = tokenOverride || profile.token_uazapi;
 
-        if (!profile.token_uazapi) {
+        if (!token) {
             return { error: "Token da Uazapi ausente. Complete seu Perfil primeiro." };
         }
 
@@ -136,7 +137,7 @@ export async function connectWhatsAppInstance() {
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
-                'token': profile.token_uazapi,
+                'token': token,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({})

@@ -165,6 +165,17 @@ export default function DashboardPage() {
     <div className="flex-1 space-y-4">
       <DashboardHeader>
         <div className="flex flex-wrap items-center gap-3 md:gap-6">
+          <div className="flex items-center space-x-2 bg-card/50 backdrop-blur-sm p-2 rounded-md border border-border">
+            <Switch
+              id="attribution-mode"
+              checked={attributionType === 'qualificacao_data'}
+              onCheckedChange={(checked) => setAttributionType(checked ? 'qualificacao_data' : 'created_at')}
+            />
+            <Label htmlFor="attribution-mode" className="text-xs md:text-sm font-medium cursor-pointer">
+              Atribuição De Conversão
+            </Label>
+          </div>
+
           <div className="flex items-center gap-2">
             <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap">Script:</span>
             <Select value={selectedArea} onValueChange={setSelectedArea}>
@@ -180,17 +191,6 @@ export default function DashboardPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="flex items-center space-x-2 bg-card/50 backdrop-blur-sm p-2 rounded-md border border-border">
-            <Switch
-              id="attribution-mode"
-              checked={attributionType === 'qualificacao_data'}
-              onCheckedChange={(checked) => setAttributionType(checked ? 'qualificacao_data' : 'created_at')}
-            />
-            <Label htmlFor="attribution-mode" className="text-xs md:text-sm font-medium cursor-pointer">
-              Atribuição De Conversão
-            </Label>
           </div>
 
           <DatePickerWithRange date={dateRange} setDate={setDateRange} />

@@ -6,11 +6,17 @@ export async function getWhatsAppStatus() {
     try {
         const profile = await getUserProfile();
 
-        if (!profile.token_uazapi || !profile.url_uazapi) {
-            return { state: 'disconnected', error: "Configurações do WhatsApp ausentes no perfil." };
+        if (!profile.token_uazapi) {
+            return { state: 'disconnected', error: "Token do WhatsApp ausente no perfil." };
         }
 
-        const endpoint = `${profile.url_uazapi}/instance/status`;
+        const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
+
+        if (!apiUrl) {
+            return { state: 'disconnected', error: "URL da API não configurada." };
+        }
+
+        const endpoint = `${apiUrl}/instance/status`;
 
         const response = await fetch(endpoint, {
             method: 'GET',
@@ -65,16 +71,17 @@ export async function initWhatsAppInstance() {
     try {
         const profile = await getUserProfile();
 
-        if (!profile.token_uazapi || !profile.url_uazapi) {
-            return { error: "Configure sua URL e Token no Perfil primeiro." };
+        if (!profile.token_uazapi) {
+            return { error: "Link do WhatsApp (Token) não configurado no Perfil." };
         }
 
-        // According to docs, init might need an admintoken
-        // However, the user said "use o token da uazapi que está na coluna token_uazapi"
-        // Let's use the token provided in the header as 'admintoken' for init as per generic Uazapi/Evolution docs if needed
-        // But the user's specific request says "use o token... que está no banco de dados"
+        const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
 
-        const endpoint = `${profile.url_uazapi}/instance/init`;
+        if (!apiUrl) {
+            return { error: "URL da API não configurada no sistema." };
+        }
+
+        const endpoint = `${apiUrl}/instance/init`;
 
         // Normally instance name is required. Since we don't have a specific column for it, 
         // we'll use a sanitized version of the office name or the token itself as a fallback identifier.
@@ -109,11 +116,17 @@ export async function connectWhatsAppInstance() {
     try {
         const profile = await getUserProfile();
 
-        if (!profile.token_uazapi || !profile.url_uazapi) {
+        if (!profile.token_uazapi) {
             return { error: "URL e Token da Uazapi ausentes. Complete seu Perfil primeiro." };
         }
 
-        const endpoint = `${profile.url_uazapi}/instance/connect`;
+        const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
+
+        if (!apiUrl) {
+            return { error: "URL da API não configurada." };
+        }
+
+        const endpoint = `${apiUrl}/instance/connect`;
 
         const response = await fetch(endpoint, {
             method: 'POST',

@@ -204,15 +204,6 @@ export default function ProfilePage() {
                             />
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="url_uazapi">URL Uazapi</Label>
-                            <Input
-                                id="url_uazapi"
-                                name="url_uazapi"
-                                defaultValue={profile["url_uazapi"] || ''}
-                                placeholder="https://..."
-                            />
-                        </div>
 
                         <div className="grid gap-2">
                             <Label htmlFor="token_uazapi">Token Uazapi</Label>

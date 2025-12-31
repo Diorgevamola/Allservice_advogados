@@ -40,6 +40,10 @@ export async function getUserProfile() {
         throw new Error(`Falha ao carregar dados do perfil: ${error.message} (${error.code})`);
     }
 
+    if (data) {
+        data.url_uazapi = process.env.NEXT_PUBLIC_UAZAPI_URL || data.url_uazapi;
+    }
+
     return data;
 }
 
@@ -61,7 +65,6 @@ export async function updateUserProfile(formData: FormData) {
         "Tempo até alguém entrar em contato": formData.get("tempo_contato"),
         "link da planilha": formData.get("link_planilha"),
         "token_uazapi": formData.get("token_uazapi"),
-        "url_uazapi": formData.get("url_uazapi"),
         "telefone": formData.get("telefone"),
     };
 

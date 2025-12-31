@@ -81,6 +81,30 @@ export async function updateUserProfile(formData: FormData) {
     return { success: true };
 }
 
+export async function saveInstanceToken(token: string) {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('session');
+
+    if (!session || !session.value) {
+        return { error: "Usuário não autenticado" };
+    }
+
+    const userId = session.value;
+    const supabase = createClient();
+
+    const { error } = await supabase
+        .from('numero_dos_atendentes')
+        .update({ token_uazapi: token })
+        .eq('id', userId);
+
+    if (error) {
+        console.error("Erro ao salvar token:", error);
+        return { error: "Falha ao salvar token da instância" };
+    }
+
+    return { success: true };
+}
+
 export async function getInstanceStatus() {
     try {
         const profile = await getUserProfile();

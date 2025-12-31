@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Smartphone, Wifi, WifiOff, RefreshCw, Loader2, QrCode, CheckCircle2, AlertCircle } from "lucide-react"
 import { getWhatsAppStatus, initWhatsAppInstance, connectWhatsAppInstance } from "./actions"
+import { saveInstanceToken } from "@/app/(dashboard)/perfil/actions"
 import { toast } from "sonner"
 import { Progress } from "@/components/ui/progress"
 
@@ -53,19 +54,38 @@ export default function ConexaoPage() {
         setQrCode(null)
 
         try {
-            // 1. Check if we need to init
+            // 1. Check if we need to init (token is empty)
             if (status === "not_initialized") {
-                setProgress(30)
+                toast.info("Criando nova instância WhatsApp...")
+                setProgress(20)
+
                 const initRes = await initWhatsAppInstance()
                 if (initRes.error) {
                     toast.error("Falha ao inicializar instância: " + initRes.error)
                     setIsConnecting(false)
                     return
                 }
-                toast.success("Instância inicializada com sucesso!")
+
+                setProgress(40)
+
+                // Save the generated token to database
+                if (initRes.token) {
+                    const saveRes = await saveInstanceToken(initRes.token)
+                    if (saveRes.error) {
+                        toast.error("Falha ao salvar token: " + saveRes.error)
+                        setIsConnecting(false)
+                        return
+                    }
+                    toast.success("Instância criada e token salvo!")
+                } else {
+                    toast.error("Token não retornado pela API")
+                    setIsConnecting(false)
+                    return
+                }
             }
 
             // 2. Connect to get QR Code
+            toast.info("Gerando QR Code...")
             setProgress(60)
             const connectRes = await connectWhatsAppInstance()
             if (connectRes.error) {

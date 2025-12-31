@@ -7,7 +7,7 @@ export async function getWhatsAppStatus() {
         const profile = await getUserProfile();
 
         if (!profile.token_uazapi) {
-            return { state: 'disconnected', error: "Token do WhatsApp ausente no perfil." };
+            return { state: 'not_initialized', error: "Token ausente. Clique em conectar para criar uma nova instância." };
         }
 
         const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
@@ -71,10 +71,6 @@ export async function initWhatsAppInstance() {
     try {
         const profile = await getUserProfile();
 
-        if (!profile.token_uazapi) {
-            return { error: "Link do WhatsApp (Token) não configurado no Perfil." };
-        }
-
         const apiUrl = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
 
         if (!apiUrl) {
@@ -83,14 +79,15 @@ export async function initWhatsAppInstance() {
 
         const endpoint = `${apiUrl}/instance/init`;
 
-        // Normally instance name is required. Since we don't have a specific column for it, 
-        // we'll use a sanitized version of the office name or the token itself as a fallback identifier.
-        const instanceName = profile["Escritório"]?.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || "instancia_advogado";
+        // Generate instance name from office name or phone
+        const instanceName = profile["Escritório"]?.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+            || `instance_${profile.telefone}`
+            || `instance_${Date.now()}`;
 
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
-                'admintoken': process.env.UAZAPI_ADMIN_TOKEN || profile.token_uazapi, // Switch to admintoken header
+                'admintoken': process.env.UAZAPI_ADMIN_TOKEN || '',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -104,7 +101,15 @@ export async function initWhatsAppInstance() {
             return { error: data.message || `Erro ao inicializar: ${response.status}` };
         }
 
-        return { success: true, data };
+        // Extract token from response - adjust based on actual Uazapi response format
+        const instanceToken = data.token || data.instance?.token || data.apikey;
+
+        if (!instanceToken) {
+            console.error('Init response:', data);
+            return { error: 'Token não retornado pela API após inicialização.' };
+        }
+
+        return { success: true, data, token: instanceToken };
 
     } catch (error: any) {
         console.error("initWhatsAppInstance exception:", error);

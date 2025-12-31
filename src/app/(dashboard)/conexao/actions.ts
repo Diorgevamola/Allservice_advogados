@@ -37,17 +37,33 @@ export async function getWhatsAppStatus() {
 
         const data = await response.json();
 
+        console.log("🔍 [DEBUG] RAW Uazapi Status Response:", JSON.stringify(data, null, 2));
+
         // Handle Uazapi response format (matching perfil/actions.ts)
         let state = 'unknown';
-        if (data?.instance?.state) {
+
+        // Priority 1: Check detailed instance status
+        if (data?.instance?.status) {
+            state = data.instance.status; // "disconnected" | "open" | "connecting"
+        }
+        // Priority 2: Check legacy state field
+        else if (data?.instance?.state) {
             state = data.instance.state; // "open" | "connecting" | "close"
-        } else if (data?.status?.connected === true) {
+        }
+        // Priority 3: Fallback to boolean connected status
+        else if (data?.status?.connected === true) {
             state = 'open';
         } else if (data?.status?.connected === false) {
-            state = 'close';
+            // Only set close if we don't have a more specific status
+            if (state === 'unknown') state = 'close';
         } else if (data?.state) {
             state = data.state;
         }
+
+        // Normalize states for frontend
+        const lowerState = state.toLowerCase();
+        if (lowerState === 'connected') state = 'open';
+        if (lowerState === 'disconnected') state = 'close'; // "close" in frontend means disconnected/show QR button
 
         // Standardize "connected" to "open" for frontend consistency if needed
         if (state.toLowerCase() === 'connected') state = 'open';

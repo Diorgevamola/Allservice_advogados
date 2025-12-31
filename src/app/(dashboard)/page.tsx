@@ -159,7 +159,7 @@ export default function DashboardPage() {
   const { start: chartStart, end: chartEnd } = getChartDates();
 
   return (
-    <div className="flex-1 space-y-4 pt-6">
+    <div className="flex-1 space-y-4">
       <DashboardHeader>
         <div className="flex flex-wrap items-center gap-3 md:gap-6">
           <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function getUserProfile() {
     const cookieStore = await cookies();
@@ -43,7 +44,9 @@ export async function getUserProfile() {
     const profile = Array.isArray(data) ? data[0] : data;
 
     if (!profile) {
-        throw new Error("Perfil não encontrado");
+        console.warn(`Sessão inválida para ID: ${userId}. Redirecionando para login.`);
+        (await cookies()).delete('session');
+        redirect('/login');
     }
 
     if (profile) {

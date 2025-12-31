@@ -10,11 +10,16 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function loginAction(formData: FormData) {
-    const identifier = formData.get('phone') as string; // Named 'phone' in form but can be email
+    let identifier = formData.get('phone') as string; // Named 'phone' in form but can be email
     const password = formData.get('password') as string;
 
     if (!identifier) {
         return { error: 'Telefone ou E-mail é obrigatório' };
+    }
+
+    // Sanitize phone number (remove non-digits) if it's not an email
+    if (!identifier.includes('@')) {
+        identifier = identifier.replace(/\D/g, '');
     }
 
     // Check if it's an email (Admin)

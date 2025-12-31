@@ -93,9 +93,8 @@ export default function ConexaoPage() {
             const connectRes = await connectWhatsAppInstance(activeToken)
             if (connectRes.error) {
                 toast.error("Erro ao gerar QR Code: " + connectRes.error)
-            } else if (connectRes.data?.base64 || connectRes.data?.qrcode?.base64) {
-                const b64 = connectRes.data.base64 || connectRes.data.qrcode.base64;
-                setQrCode(b64)
+            } else if (connectRes.data?.base64) {
+                setQrCode(connectRes.data.base64)
                 toast.success("QR Code gerado! Escaneie no seu WhatsApp.")
                 setStatus("connecting")
             } else {

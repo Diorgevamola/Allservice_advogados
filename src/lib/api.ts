@@ -71,16 +71,18 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
 
     } else {
         // --- DIÁRIO MODE (Conversion) ---
-        // 1. Fetch Total Count (Always based on created_at as requested)
+        // 1. Fetch Total Count (Based on last_message as requested)
         let totalQuery = supabase
             .from('Todos os clientes')
-            .select('id', { count: 'exact', head: true }) // head: true for count only
+            .select('id', { count: 'exact', head: true })
             .eq('ID_empresa', userId);
 
         totalQuery = applyAreaFilter(totalQuery);
 
         if (startDate && endDate) {
-            totalQuery = totalQuery.gte('created_at', startDate).lte('created_at', endDate);
+            totalQuery = totalQuery.gte('last_message', startDate).lte('last_message', endDate);
+        } else if (startDate) {
+            totalQuery = totalQuery.gte('last_message', startDate);
         }
 
         const { count: totalCount, error: totalError } = await totalQuery;

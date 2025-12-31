@@ -110,7 +110,7 @@ export async function connectWhatsAppInstance() {
         const profile = await getUserProfile();
 
         if (!profile.token_uazapi || !profile.url_uazapi) {
-            return { error: "Configurações incompletas." };
+            return { error: "URL e Token da Uazapi ausentes. Complete seu Perfil primeiro." };
         }
 
         const endpoint = `${profile.url_uazapi}/instance/connect`;

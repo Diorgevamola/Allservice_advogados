@@ -61,6 +61,7 @@ export async function updateUserProfile(formData: FormData) {
         "Tempo até alguém entrar em contato": formData.get("tempo_contato"),
         "link da planilha": formData.get("link_planilha"),
         "token_uazapi": formData.get("token_uazapi"),
+        "url_uazapi": formData.get("url_uazapi"),
         "telefone": formData.get("telefone"),
     };
 

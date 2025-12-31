@@ -23,6 +23,8 @@ import { DateRange } from "react-day-picker";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { exportDashboardMetricsToCsv } from './actions';
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -33,6 +35,7 @@ export default function DashboardPage() {
     to: undefined,
   });
   const [selectedArea, setSelectedArea] = useState<string>('all');
+  const [attributionType, setAttributionType] = useState<'created_at' | 'qualificacao_data'>('created_at');
   const [scripts, setScripts] = useState<string[]>([]);
   const [data, setData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,7 +126,7 @@ export default function DashboardPage() {
         // const [range, setRange] = useState<TimeRange>('today');
         // Let's initialized dateRange with Today.
 
-        const stats = await fetchDashboardData(start, end, selectedArea);
+        const stats = await fetchDashboardData(start, end, selectedArea, attributionType);
         setData(stats);
       } catch (error) {
         console.error("Failed to load dashboard data", error);
@@ -133,7 +136,7 @@ export default function DashboardPage() {
     }
 
     loadData();
-  }, [dateRange, selectedArea]);
+  }, [dateRange, selectedArea, attributionType]);
 
   // Set default date range to Today on mount if needed, or keep empty to show "Selecione uma data"
   useEffect(() => {
@@ -177,6 +180,17 @@ export default function DashboardPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-card/50 backdrop-blur-sm p-2 rounded-md border border-border">
+            <Switch
+              id="attribution-mode"
+              checked={attributionType === 'qualificacao_data'}
+              onCheckedChange={(checked) => setAttributionType(checked ? 'qualificacao_data' : 'created_at')}
+            />
+            <Label htmlFor="attribution-mode" className="text-xs md:text-sm font-medium cursor-pointer">
+              Atribuição De Conversão
+            </Label>
           </div>
 
           <DatePickerWithRange date={dateRange} setDate={setDateRange} />

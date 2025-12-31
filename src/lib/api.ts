@@ -25,7 +25,7 @@ export interface DashboardStats {
     }[];
 }
 
-export async function fetchDashboardData(startDate?: string, endDate?: string, area?: string): Promise<DashboardStats> {
+export async function fetchDashboardData(startDate?: string, endDate?: string, area?: string, dateColumn: 'created_at' | 'qualificacao_data' = 'created_at'): Promise<DashboardStats> {
     const cookieStore = await cookies();
     const userId = cookieStore.get('session')?.value;
 
@@ -41,9 +41,9 @@ export async function fetchDashboardData(startDate?: string, endDate?: string, a
         .eq('ID_empresa', userId);
 
     if (startDate && endDate) {
-        query = query.gte('created_at', startDate).lte('created_at', endDate);
+        query = query.gte(dateColumn, startDate).lte(dateColumn, endDate);
     } else if (startDate) {
-        query = query.gte('created_at', startDate);
+        query = query.gte(dateColumn, startDate);
     }
 
     if (area && area !== 'all') {

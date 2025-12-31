@@ -32,19 +32,25 @@ export async function getUserProfile() {
     const { data, error } = await supabase
         .from('numero_dos_atendentes')
         .select('*')
-        .eq('id', userId)
-        .single();
+        .eq('id', userId);
 
     if (error) {
         console.error("Erro ao buscar perfil:", error);
         throw new Error(`Falha ao carregar dados do perfil: ${error.message} (${error.code})`);
     }
 
-    if (data) {
-        data.url_uazapi = process.env.NEXT_PUBLIC_UAZAPI_URL || data.url_uazapi;
+    // Handle multiple records - take the first one
+    const profile = Array.isArray(data) ? data[0] : data;
+
+    if (!profile) {
+        throw new Error("Perfil não encontrado");
     }
 
-    return data;
+    if (profile) {
+        profile.url_uazapi = process.env.NEXT_PUBLIC_UAZAPI_URL || profile.url_uazapi;
+    }
+
+    return profile;
 }
 
 export async function updateUserProfile(formData: FormData) {
